@@ -1,0 +1,44 @@
+Return-Path: <billing@n0rdbank-security.example>
+Received: from mail.n0rdbank-security.example (unknown [198.51.100.23])
+	by mx.coffee-byte.example (Postfix) with ESMTP id 4F2A1C0921
+	for <accounting@coffee-byte.example>; Tue, 22 Sep 2026 09:41:17 +0300 (MSK)
+Authentication-Results: mx.coffee-byte.example;
+	spf=fail (domain of nordbank.example does not designate 198.51.100.23 as permitted sender) smtp.mailfrom=nordbank.example;
+	dkim=none;
+	dmarc=fail (p=reject) header.from=nordbank.example
+From: "NordBank - Служба безопасности" <security@nordbank.example>
+Reply-To: <nordbank.help.desk@freemail.example>
+To: accounting@coffee-byte.example
+Subject: =?UTF-8?B?0KHQoNCe0KfQndCeOiDQstCw0Ygg0YHRh9GR0YIg0LfQsNCx0LvQvtC60LjRgNC+0LLQsNC9?=
+Date: Tue, 22 Sep 2026 09:41:12 +0300
+Message-ID: <20260922094112.77120@n0rdbank-security.example>
+X-Mailer: MassMailer Pro 4.2
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="----=_BL_boundary_42"
+
+------=_BL_boundary_42
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+
+Уважаемый клиент!
+
+Мы обнаружили подозрительную активность, и ваш счёт временно ЗАБЛОКИРОВАН.
+Чтобы избежать списания средств, подтвердите данные в течение 2 часов:
+
+https://nordbank-login.example/verify?id=88213
+
+Если вы не подтвердите данные, счёт будет закрыт навсегда.
+Акт сверки во вложении - откройте его и следуйте инструкциям.
+
+С уважением,
+Служба безопасности NordBank
+
+------=_BL_boundary_42
+Content-Type: application/octet-stream; name="Akt_sverki_092026.pdf.exe"
+Content-Disposition: attachment; filename="Akt_sverki_092026.pdf.exe"
+Content-Transfer-Encoding: base64
+
+VGhpcyBpcyBhIGhhcm1sZXNzIEJyZWFjaExhYiB0cmFpbmluZyBmaWxlLiBObyByZWFsIHBheWxv
+YWQuIEZsYWc6IEJMe2RvdWJsZV9leHRlbnNpb25fdHJpY2t9Cg==
+
+------=_BL_boundary_42--

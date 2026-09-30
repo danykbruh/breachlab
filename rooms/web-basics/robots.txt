@@ -1,0 +1,4 @@
+# Учебный robots.txt кофейни «Байт» (BreachLab)
+User-agent: *
+Disallow: /hidden-panel/
+Disallow: /old-backup/

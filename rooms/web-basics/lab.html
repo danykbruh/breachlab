@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Кофейня «Байт» - учебный сайт BreachLab</title>
+<style>
+  body{margin:0;font:16px/1.6 system-ui,sans-serif;background:#f6efe6;color:#2b1d12}
+  header{background:#2b1d12;color:#f6efe6;padding:18px 20px}
+  header b{font-size:22px}
+  main{max-width:720px;margin:0 auto;padding:20px}
+  .menu{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+  .item{background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .note{background:#fff3cd;border-radius:10px;padding:10px 14px;font-size:14px}
+  form{display:flex;gap:8px;flex-wrap:wrap}
+  input,button{font:inherit;padding:8px 12px;border-radius:8px;border:1px solid #c9b8a6}
+  button{background:#2b1d12;color:#fff;border:0}
+</style>
+</head>
+<body>
+<!-- TODO: убрать перед релизом! Временный флаг для тестировщиков: BL{view_source_first} -->
+<header><b>☕ Кофейня «Байт»</b><br><small>Учебный сайт BreachLab. Это не настоящий магазин.</small></header>
+<main>
+  <p class="note">Это учебная страница. Ищите флаги с помощью инструментов браузера: исходный код (Ctrl+U), DevTools (F12).</p>
+  <h2>Меню</h2>
+  <div class="menu">
+    <div class="item"><b>Эспрессо</b><br>120 ₽</div>
+    <div class="item"><b>Капучино</b><br>180 ₽</div>
+    <div class="item"><b>Раф «Хакер»</b><br>240 ₽</div>
+  </div>
+  <h2>Вход для сотрудников</h2>
+  <form id="staff">
+    <input id="login" placeholder="Логин" autocomplete="off">
+    <input id="pass" type="password" placeholder="Пароль" autocomplete="off">
+    <button>Войти</button>
+  </form>
+  <p id="out"></p>
+</main>
+<script src="lab.js"></script>
+</body>
+</html>
