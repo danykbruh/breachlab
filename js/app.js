@@ -377,10 +377,13 @@ async function viewPath(slug) {
 function hero(stats) {
   const num = (v, label) => h("div", {}, h("b", {}, v ?? "—"), h("span", {}, label));
   return h("section", { class: "hero" },
+    h("div", { class: "hero-grid" },
+    h("div", { class: "hero-text" },
     h("p", { class: "eyebrow" }, h("span", { class: "dot", "aria-hidden": "true" }), "учебная платформа по кибербезопасности"),
     h("h1", {}, "Учись защищать, ", h("em", {}, "решая реальные задачи")),
     h("p", { class: "lead" }, "Разбирай логи взломанного сервера, фишинговые письма и уязвимые сайты. Теория, практика и флаги — прямо в браузере, бесплатно."),
-    h("div", { class: "actions" }, h("a", { class: "btn", href: "#/signup" }, "Начать бесплатно"), h("a", { class: "btn ghost", href: "#rooms", onclick: (e) => { e.preventDefault(); document.getElementById("rooms").scrollIntoView({ behavior: "smooth" }); } }, "Смотреть комнаты ↓")),
+    h("div", { class: "actions" }, h("a", { class: "btn", href: "#/signup" }, "Начать бесплатно"), h("a", { class: "btn ghost", href: "#rooms", onclick: (e) => { e.preventDefault(); document.getElementById("rooms").scrollIntoView({ behavior: "smooth" }); } }, "Смотреть комнаты ↓")),),
+    h("div", { class: "hero-visual", "aria-hidden": "true" }, h("canvas", { id: "hero3d" }), h("div", { class: "hero-visual-label" }, h("span", { class: "dot" }), "учебная карта атак"))),
     stats ? h("div", { class: "stats hero-stats" }, num(stats.rooms, "комнат"), num(stats.tasks, "заданий"), num(stats.players, "игроков"), num(stats.solves, "флагов найдено")) : null,
     h("div", { class: "steps" },
       h("div", { class: "step" }, h("b", {}, "01"), h("span", {}, "Читаешь короткую теорию")),

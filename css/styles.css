@@ -293,3 +293,17 @@ a.card.cert-mini div{display:flex;flex-direction:column}
   main{max-width:none;padding:0}
   .cert{box-shadow:none;margin:0 auto;page-break-inside:avoid}
 }
+
+/* ---------- 3D-глобус на главной ---------- */
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:24px;align-items:center}
+.hero-visual{position:relative;aspect-ratio:1/1;max-height:480px;width:100%}
+.hero-visual::before{content:"";position:absolute;inset:12%;border-radius:50%;background:radial-gradient(circle,rgba(255,59,59,.22),transparent 65%);filter:blur(20px)}
+#hero3d{position:relative;width:100%;height:100%;display:block;opacity:0;transition:opacity .8s ease;touch-action:pan-y;cursor:grab}
+#hero3d.ready{opacity:1}
+#hero3d:active{cursor:grabbing}
+.hero-visual-label{position:absolute;right:6%;bottom:6%;display:flex;align-items:center;gap:8px;font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:rgba(10,10,11,.7);border:1px solid var(--line);border-radius:999px;padding:5px 11px;backdrop-filter:blur(6px)}
+.hero-visual-label .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+@media (max-width:820px){
+  .hero-grid{grid-template-columns:1fr}
+  .hero-visual{max-width:340px;margin:0 auto;max-height:340px}
+}
