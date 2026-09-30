@@ -26,7 +26,36 @@ function h(tag, attrs = {}, ...kids) {
 }
 const LABEL = { soc: "SOC", web: "Веб", linux: "Linux", forensics: "Форензика", crypto: "Криптография", osint: "OSINT",
                 easy: "Легко", medium: "Средне", hard: "Сложно" };
-const ICON = { soc: "🛡", web: "🌐", linux: "🐧", forensics: "🔍", crypto: "🔐", osint: "🛰" };
+// Иконки (SVG в стиле Lucide) — вместо эмодзи, чтобы выглядели одинаково на всех устройствах
+const ICONS = {
+  shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  terminal: '<path d="m4 17 6-6-6-6"/><path d="M12 19h8"/>',
+  lock: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  radar: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  flag: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/>',
+  door: '<path d="M13 4h3a2 2 0 0 1 2 2v14"/><path d="M2 20h3"/><path d="M13 20h9"/><path d="M10 12v.01"/><path d="M13 4.56v16.16a1 1 0 0 1-1.24.97L5 20V5.56a2 2 0 0 1 1.52-1.94l4-1A2 2 0 0 1 13 4.56z"/>',
+  compass: '<circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36z"/>',
+  cap: '<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/><path d="M22 10v6"/>',
+  target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  zap: '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
+  flame: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+  calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  trophy: '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/>',
+  arrow: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+};
+function icon(name, size = 18) {
+  const span = document.createElement("span");
+  span.className = "ic"; span.setAttribute("aria-hidden", "true");
+  span.innerHTML = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ""}</svg>`;
+  return span;
+}
+const ICON = { soc: "shield", web: "globe", linux: "terminal", forensics: "search", crypto: "lock", osint: "radar" };
+const catIcon = (c, size) => icon(ICON[c] || "shield", size);
 function md(text) {                     // markdown → безопасный HTML
   const div = h("div", { class: "md" });
   div.innerHTML = DOMPurify.sanitize(marked.parse(text || ""));
@@ -79,20 +108,20 @@ function bestStreakOf(dates) {
   return best;
 }
 const BADGES = [
-  { id: "first",   icon: "🚩", name: "Первый флаг",      desc: "Решить первое задание",              test: (s) => s.solved >= 1 },
-  { id: "room1",   icon: "🚪", name: "Первая комната",   desc: "Пройти комнату целиком",             test: (s) => s.roomsDone >= 1 },
-  { id: "room5",   icon: "🧭", name: "Исследователь",    desc: "Пройти 5 комнат",                    test: (s) => s.roomsDone >= 5 },
-  { id: "all",     icon: "🎓", name: "Выпускник",        desc: "Пройти все комнаты",                 test: (s) => s.roomsTotal > 0 && s.roomsDone === s.roomsTotal },
-  { id: "p100",    icon: "💯", name: "Сотня",            desc: "Набрать 100 очков",                  test: (s) => s.points >= 100 },
-  { id: "p300",    icon: "⚡", name: "Три сотни",        desc: "Набрать 300 очков",                  test: (s) => s.points >= 300 },
-  { id: "streak3", icon: "🔥", name: "В ритме",          desc: "Решать задания 3 дня подряд",        test: (s) => s.bestStreak >= 3 },
-  { id: "streak7", icon: "📅", name: "Неделя без пропусков", desc: "Решать задания 7 дней подряд",   test: (s) => s.bestStreak >= 7 },
-  { id: "night",   icon: "🌙", name: "Ночная смена",     desc: "Решить задание между 00:00 и 05:00", test: (s) => s.night },
-  { id: "soc",     icon: "🛡", name: "Аналитик SOC",     desc: "Пройти все комнаты SOC",             test: (s) => s.catDone("soc") },
-  { id: "web",     icon: "🌐", name: "Веб-детектив",     desc: "Пройти все веб-комнаты",             test: (s) => s.catDone("web") },
-  { id: "linux",   icon: "🐧", name: "Пингвин",          desc: "Пройти все комнаты по Linux",        test: (s) => s.catDone("linux") },
-  { id: "crypto",  icon: "🔐", name: "Шифровальщик",     desc: "Пройти все комнаты по криптографии", test: (s) => s.catDone("crypto") },
-  { id: "forensics", icon: "🔍", name: "Криминалист",    desc: "Пройти все комнаты по форензике",    test: (s) => s.catDone("forensics") },
+  { id: "first",   icon: "flag", name: "Первый флаг",      desc: "Решить первое задание",              test: (s) => s.solved >= 1 },
+  { id: "room1",   icon: "door", name: "Первая комната",   desc: "Пройти комнату целиком",             test: (s) => s.roomsDone >= 1 },
+  { id: "room5",   icon: "compass", name: "Исследователь",    desc: "Пройти 5 комнат",                    test: (s) => s.roomsDone >= 5 },
+  { id: "all",     icon: "cap", name: "Выпускник",        desc: "Пройти все комнаты",                 test: (s) => s.roomsTotal > 0 && s.roomsDone === s.roomsTotal },
+  { id: "p100",    icon: "target", name: "Сотня",            desc: "Набрать 100 очков",                  test: (s) => s.points >= 100 },
+  { id: "p300",    icon: "zap", name: "Три сотни",        desc: "Набрать 300 очков",                  test: (s) => s.points >= 300 },
+  { id: "streak3", icon: "flame", name: "В ритме",          desc: "Решать задания 3 дня подряд",        test: (s) => s.bestStreak >= 3 },
+  { id: "streak7", icon: "calendar", name: "Неделя без пропусков", desc: "Решать задания 7 дней подряд",   test: (s) => s.bestStreak >= 7 },
+  { id: "night",   icon: "moon", name: "Ночная смена",     desc: "Решить задание между 00:00 и 05:00", test: (s) => s.night },
+  { id: "soc",     icon: "shield", name: "Аналитик SOC",     desc: "Пройти все комнаты SOC",             test: (s) => s.catDone("soc") },
+  { id: "web",     icon: "globe", name: "Веб-детектив",     desc: "Пройти все веб-комнаты",             test: (s) => s.catDone("web") },
+  { id: "linux",   icon: "terminal", name: "Пингвин",          desc: "Пройти все комнаты по Linux",        test: (s) => s.catDone("linux") },
+  { id: "crypto",  icon: "lock", name: "Шифровальщик",     desc: "Пройти все комнаты по криптографии", test: (s) => s.catDone("crypto") },
+  { id: "forensics", icon: "search", name: "Криминалист",    desc: "Пройти все комнаты по форензике",    test: (s) => s.catDone("forensics") },
 ];
 
 // ---------- данные ----------
@@ -157,18 +186,18 @@ async function viewRooms() {
     const pct = total ? Math.round((done / total) * 100) : 0;
     return h("a", { class: `card room${complete ? " complete" : ""}`, href: `#/room/${r.slug}` },
       h("div", { class: "room-top" },
-        h("span", { class: "room-icon", "aria-hidden": "true" }, ICON[r.category] || "▣"),
+        h("span", { class: "room-icon" }, catIcon(r.category, 20)),
         h("div", { class: "tags" }, h("span", { class: "tag" }, LABEL[r.category]), h("span", { class: `tag ${r.difficulty}` }, LABEL[r.difficulty]))),
       h("h3", {}, r.title),
       h("p", { class: "muted", style: "margin:0" }, r.summary),
       h("div", { class: "room-foot" },
         user ? h("div", { class: "bar", role: "img", "aria-label": `Решено ${done} из ${total}` }, h("i", { style: `width:${pct}%` })) : null,
-        h("small", { class: "muted" }, user ? (complete ? "Пройдена ✓" : `${done} из ${total} ${plural(total, "задания", "заданий", "заданий")}`)
+        h("small", { class: "muted" }, user ? (complete ? h("span", { class: "ok-text" }, icon("check", 14), " Пройдена") : `${done} из ${total} ${plural(total, "задания", "заданий", "заданий")}`)
                                              : `${total} ${plural(total, "задание", "задания", "заданий")}`)));
   };
   const chips = h("div", { class: "chips", role: "group", "aria-label": "Фильтр по категориям" },
-    [["all", "Все"], ...cats.map((c) => [c, `${ICON[c] || ""} ${LABEL[c]}`])].map(([c, label]) =>
-      h("button", { type: "button", class: "chip", "data-cat": c, onclick: () => { filter = c; draw(); } }, label)));
+    [["all", "Все"], ...cats.map((c) => [c, LABEL[c]])].map(([c, label]) =>
+      h("button", { type: "button", class: "chip", "data-cat": c, onclick: () => { filter = c; draw(); } }, c === "all" ? null : catIcon(c, 15), label)));
   if (!cats.includes(filter)) filter = "all";
 
   const top = user ? welcomeBack(s) : hero(stats);
@@ -178,7 +207,7 @@ async function viewRooms() {
 function hero(stats) {
   const num = (v, label) => h("div", {}, h("b", {}, v ?? "—"), h("span", {}, label));
   return h("section", { class: "hero" },
-    h("p", { class: "eyebrow" }, "> учебная платформа по кибербезопасности"),
+    h("p", { class: "eyebrow" }, h("span", { class: "dot", "aria-hidden": "true" }), "учебная платформа по кибербезопасности"),
     h("h1", {}, "Учись защищать, ", h("em", {}, "решая реальные задачи")),
     h("p", { class: "lead" }, "Разбирай логи взломанного сервера, фишинговые письма и уязвимые сайты. Теория, практика и флаги — прямо в браузере, бесплатно."),
     h("div", { class: "actions" }, h("a", { class: "btn", href: "#/signup" }, "Начать бесплатно"), h("a", { class: "btn ghost", href: "#rooms", onclick: (e) => { e.preventDefault(); document.getElementById("rooms").scrollIntoView({ behavior: "smooth" }); } }, "Смотреть комнаты ↓")),
@@ -195,8 +224,8 @@ function welcomeBack(s) {
       h("div", {},
         h("p", { class: "eyebrow" }, `Уровень ${lv.n} · ${lv.name}`),
         h("h1", { style: "margin:0" }, `Привет, ${profile?.username || "агент"}!`),
-        h("p", { class: "muted", style: "margin:6px 0 0" }, `${s.points} очков · ${s.solved} ${plural(s.solved, "флаг", "флага", "флагов")}` + (s.streak ? ` · 🔥 ${s.streak} ${plural(s.streak, "день", "дня", "дней")} подряд` : ""))),
-      s.next ? h("a", { class: "btn", href: `#/room/${s.next.room.slug}` }, s.next.done ? "Продолжить →" : "Следующая комната →") : h("span", { class: "tag easy" }, "Все комнаты пройдены")),
+        h("p", { class: "muted", style: "margin:6px 0 0" }, `${s.points} очков · ${s.solved} ${plural(s.solved, "флаг", "флага", "флагов")}`, s.streak ? h("span", { class: "streak" }, " · ", icon("flame", 15), ` ${s.streak} ${plural(s.streak, "день", "дня", "дней")} подряд`) : null)),
+      s.next ? h("a", { class: "btn", href: `#/room/${s.next.room.slug}` }, s.next.done ? "Продолжить " : "Следующая комната ", icon("arrow", 16)) : h("span", { class: "tag easy" }, "Все комнаты пройдены")),
     h("div", { class: "bar xp", role: "img", "aria-label": `До следующего уровня ${lv.pct}%` }, h("i", { style: `width:${lv.pct}%` })),
     h("small", { class: "muted" }, lv.to ? `До уровня ${lv.n + 1}: ${lv.to - s.points} очк.` : "Максимальный уровень"),
     s.next ? h("p", { style: "margin:10px 0 0" }, h("span", { class: "muted" }, "Дальше: "), h("a", { href: `#/room/${s.next.room.slug}` }, s.next.room.title)) : null);
@@ -218,7 +247,7 @@ async function viewRoom(slug) {
   const total = list.length, maxPts = list.reduce((a, t) => a + t.points, 0);
   const progress = h("div", { class: "room-progress" });
   const banner = h("div", { class: "done-banner", hidden: true },
-    h("b", {}, "🎉 Комната пройдена!"), " ",
+    icon("trophy", 20), h("b", {}, " Комната пройдена!"), " ",
     nextRooms?.[0] ? h("a", { href: `#/room/${nextRooms[0].slug}` }, `Дальше: ${nextRooms[0].title} →`) : h("a", { href: "#/profile" }, "Посмотреть значки →"));
   const update = () => {
     const done = list.filter((t) => solved.has(t.id)).length;
@@ -229,10 +258,10 @@ async function viewRoom(slug) {
   };
   const cards = list.map((t) => taskCard(t, solved.has(t.id), () => { solved.add(t.id); update(); }));
   const files = Array.isArray(room.files) && room.files.length
-    ? h("div", { class: "files" }, h("span", { class: "muted" }, "Файлы комнаты:"), room.files.map((f) => h("a", { class: "btn-small", href: f.url, download: "" }, `⬇ ${f.name}`))) : null;
+    ? h("div", { class: "files" }, h("span", { class: "muted" }, "Файлы комнаты:"), room.files.map((f) => h("a", { class: "btn-small", href: f.url, download: "" }, icon("download", 16), ` ${f.name}`))) : null;
   render(
     h("a", { href: "#/", class: "muted" }, "← Все комнаты"),
-    h("div", { class: "tags", style: "margin-top:12px" }, h("span", { class: "tag" }, `${ICON[room.category] || ""} ${LABEL[room.category]}`), h("span", { class: `tag ${room.difficulty}` }, LABEL[room.difficulty])),
+    h("div", { class: "tags", style: "margin-top:12px" }, h("span", { class: "tag" }, catIcon(room.category, 12), ` ${LABEL[room.category]}`), h("span", { class: `tag ${room.difficulty}` }, LABEL[room.difficulty])),
     h("h1", { style: "margin-top:8px" }, room.title),
     h("p", { class: "muted" }, room.summary),
     progress,
@@ -330,9 +359,8 @@ async function viewLeaderboard() {
   setNav("leaderboard");
   const { data, error } = await sb.rpc("leaderboard", { p_limit: 50 });
   if (error) return fail();
-  const medal = ["🥇", "🥈", "🥉"];
   const rows = (data || []).map((r, i) => h("tr", { class: profile && r.username === profile.username ? "me" : null },
-    h("td", { class: "n" }, medal[i] || i + 1), h("td", {}, r.username, h("small", { class: "lvl" }, levelOf(r.points).name)),
+    h("td", { class: `n${i < 3 ? " top" + (i + 1) : ""}` }, i + 1), h("td", {}, r.username, h("small", { class: "lvl" }, levelOf(r.points).name)),
     h("td", { class: "p" }, r.solved), h("td", { class: "p" }, r.points)));
   render(h("h1", {}, "Рейтинг"),
     rows.length ? h("table", { class: "lb" }, h("thead", {}, h("tr", {}, h("th", {}, "#"), h("th", {}, "Игрок"), h("th", { style: "text-align:right" }, "Флагов"), h("th", { style: "text-align:right" }, "Очки"))), h("tbody", {}, rows))
@@ -363,20 +391,20 @@ async function viewProfile() {
       h("div", {}, h("b", {}, s.points), h("span", {}, "очков")),
       h("div", {}, h("b", {}, s.solved), h("span", {}, "флагов")),
       h("div", {}, h("b", {}, `${s.roomsDone}/${s.roomsTotal}`), h("span", {}, "комнат")),
-      h("div", {}, h("b", {}, `🔥 ${s.streak}`), h("span", {}, "дней подряд")),
+      h("div", {}, h("b", {}, icon("flame", 22), ` ${s.streak}`), h("span", {}, "дней подряд")),
       h("div", {}, h("b", {}, `${earned}/${s.badges.length}`), h("span", {}, "значков"))),
     h("h2", {}, "Значки"),
     h("div", { class: "badges" }, s.badges.map((b) =>
       h("div", { class: `badge${b.earned ? " earned" : ""}`, title: b.desc },
-        h("span", { class: "b-icon", "aria-hidden": "true" }, b.icon), h("b", {}, b.name), h("small", {}, b.earned ? b.desc : `🔒 ${b.desc}`)))),
+        h("span", { class: "b-icon" }, icon(b.earned ? b.icon : "lock", 26)), h("b", {}, b.name), h("small", {}, b.desc)))),
     h("h2", {}, "Прогресс по комнатам"),
     h("div", { class: "progress-list" }, s.perRoom.filter((p) => p.total).map((p) => {
       const pct = Math.round((p.done / p.total) * 100);
       return h("a", { class: "prog-row", href: `#/room/${p.room.slug}` },
-        h("span", { "aria-hidden": "true" }, ICON[p.room.category] || "▣"),
+        catIcon(p.room.category, 16),
         h("span", { class: "prog-title" }, p.room.title),
         h("div", { class: "bar" }, h("i", { style: `width:${pct}%` })),
-        h("small", { class: "muted" }, p.complete ? "✓" : `${p.done}/${p.total}`));
+        p.complete ? h("span", { class: "ok-text", "aria-label": "Пройдена" }, icon("check", 16)) : h("small", { class: "muted" }, `${p.done}/${p.total}`));
     })),
     h("h2", {}, "Имя в рейтинге"),
     h("form", { class: "answer", onsubmit: async (e) => {
