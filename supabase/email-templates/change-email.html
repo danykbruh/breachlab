@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="dark"><title>Смена почты</title></head>
+<body style="margin:0;padding:0;background:#070708;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#070708;padding:32px 12px;">
+  <tr><td align="center">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#111113;border:1px solid #3a1d1f;border-radius:16px;font-family:Segoe UI,Roboto,Arial,sans-serif;color:#EDEDEF;">
+      <tr><td style="padding:28px 32px 0;">
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+          <td style="background:#FF3B3B;color:#0A0A0A;font:800 14px Consolas,monospace;border-radius:8px;width:32px;height:32px;text-align:center;">&gt;_</td>
+          <td style="padding-left:10px;font:800 18px Consolas,monospace;color:#EDEDEF;">BreachLab</td>
+        </tr></table>
+      </td></tr>
+      <tr><td style="padding:24px 32px 0;">
+        <p style="margin:0 0 6px;font:700 12px Consolas,monospace;letter-spacing:2px;text-transform:uppercase;color:#FF3B3B;">Аккаунт</p>
+        <h1 style="margin:0 0 14px;font-size:24px;line-height:1.25;color:#FFFFFF;">Подтвердите новый адрес</h1>
+        <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#A1A1AA;">Вы запросили смену почты для аккаунта BreachLab на адрес {{ .NewEmail }}. Нажмите кнопку, чтобы подтвердить изменение.</p>
+      </td></tr>
+      <tr><td style="padding:0 32px;">
+        <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#FF3B3B;color:#0A0A0A;font-weight:700;font-size:15px;text-decoration:none;padding:13px 24px;border-radius:10px;">Подтвердить новый адрес</a>
+      </td></tr>
+      <tr><td style="padding:24px 32px 0;">
+        <p style="margin:0;font-size:13px;line-height:1.6;color:#71717A;">Если кнопка не работает, скопируйте ссылку в браузер:<br><a href="{{ .ConfirmationURL }}" style="color:#FF5555;word-break:break-all;">{{ .ConfirmationURL }}</a></p>
+      </td></tr>
+      <tr><td style="padding:24px 32px 28px;">
+        <p style="margin:0;padding-top:16px;border-top:1px solid #26262B;font-size:12px;line-height:1.6;color:#71717A;">Если вы не меняли почту, не нажимайте кнопку и смените пароль в профиле.</p>
+      </td></tr>
+    </table>
+    <p style="margin:16px 0 0;font:12px Segoe UI,Arial,sans-serif;color:#52525B;">BreachLab — учебная платформа по кибербезопасности</p>
+  </td></tr>
+</table>
+</body>
+</html>

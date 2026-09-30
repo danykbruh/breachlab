@@ -50,6 +50,9 @@ const ICONS = {
   arrow: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
   route: '<circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>',
   bulb: '<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>',
+  share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98"/><path d="m15.41 6.51-6.82 3.98"/>',
+  award: '<circle cx="12" cy="8" r="6"/><path d="M15.48 12.89 17 22l-5-3-5 3 1.52-9.11"/>',
+  printer: '<path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>',
   medal: '<path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15"/><path d="M11 12 5.12 2.2"/><path d="m13 12 5.88-9.8"/><circle cx="12" cy="17" r="5"/>',
 };
 function icon(name, size = 18) {
@@ -135,7 +138,7 @@ const BADGES = [
 async function loadProfile() {
   profile = null;
   if (!user) return;
-  const { data } = await sb.from("profiles").select("username").eq("user_id", user.id).maybeSingle();
+  const { data } = await sb.from("profiles").select("username,is_public").eq("user_id", user.id).maybeSingle();
   profile = data;
 }
 async function mySolves() {
@@ -256,6 +259,97 @@ function pathCard(pp) {
       user ? h("div", { class: "bar" }, h("i", { style: `width:${pct}%` })) : null,
       h("small", { class: "muted" }, user ? (pp.complete ? h("span", { class: "ok-text" }, icon("check", 14), " Путь пройден") : `${pp.done} из ${pp.total} комнат`) : "Начать путь")));
 }
+// Кнопка «Получить сертификат»: сервер проверяет прохождение и выдаёт номер
+function certButton(slug, existingId) {
+  if (existingId) return h("a", { class: "btn-small", href: `#/cert/${existingId}` }, icon("award", 16), " Сертификат");
+  const b = h("button", { type: "button", class: "ghost cert-btn", onclick: async () => {
+    b.disabled = true; b.textContent = "Выдаю…";
+    const { data, error } = await sb.rpc("issue_certificate", { p_path_slug: slug });
+    if (error || !data?.id) { b.disabled = false; b.textContent = data?.error === "incomplete" ? `Осталось заданий: ${data.missing}` : "Не получилось, попробуйте ещё раз"; return; }
+    location.hash = `#/cert/${data.id}`;
+  } }, icon("award", 16), " Получить сертификат");
+  return b;
+}
+const fmtDate = (d) => new Date(d).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
+
+async function viewCert(id) {
+  setNav("");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return render(h("h1", {}, "Сертификат не найден"));
+  const { data: c, error } = await sb.rpc("get_certificate", { p_id: id });
+  if (error) return fail();
+  if (!c) return render(h("h1", {}, "Сертификат не найден"), h("p", { class: "muted" }, "Проверьте номер сертификата."));
+  const url = location.origin + location.pathname + `#/cert/${c.id}`;
+  const msg = h("p", { class: "msg", role: "status" });
+  document.title = `Сертификат — ${c.path_title} — BreachLab`;
+  render(
+    h("div", { class: "cert-actions no-print" },
+      h("a", { href: `#/u/${encodeURIComponent(c.username)}`, class: "muted" }, `← Профиль ${c.username}`),
+      h("div", { class: "actions" },
+        h("button", { type: "button", class: "ghost", onclick: () => window.print() }, icon("printer", 16), " Сохранить в PDF"),
+        h("button", { type: "button", class: "ghost", onclick: async () => { try { await navigator.clipboard.writeText(url); msg.className = "msg ok"; msg.textContent = "Ссылка скопирована."; } catch { prompt("Ссылка на сертификат:", url); } } }, icon("share", 16), " Ссылка"))),
+    msg,
+    h("article", { class: "cert" },
+      h("div", { class: "cert-corner tl", "aria-hidden": "true" }), h("div", { class: "cert-corner br", "aria-hidden": "true" }),
+      h("div", { class: "cert-logo" }, h("span", { class: "logo-mark" }, ">_"), " BreachLab"),
+      h("p", { class: "cert-kicker" }, "Сертификат о прохождении"),
+      h("h1", { class: "cert-path" }, c.path_title),
+      h("p", { class: "cert-text" }, "Настоящим подтверждается, что"),
+      h("p", { class: "cert-name" }, c.username),
+      h("p", { class: "cert-text" }, `успешно прошёл(ла) путь обучения из ${c.rooms} ${plural(c.rooms, "комнаты", "комнат", "комнат")} и решил(а) все практические задания.`),
+      h("div", { class: "cert-foot" },
+        h("div", {}, h("small", {}, "Дата выдачи"), h("b", {}, fmtDate(c.issued_at))),
+        h("div", { class: "cert-seal", "aria-hidden": "true" }, icon("award", 34)),
+        h("div", {}, h("small", {}, "Номер"), h("b", { class: "mono" }, c.id.slice(0, 8).toUpperCase()))),
+      h("p", { class: "cert-verify" }, "Проверить подлинность: ", h("span", { class: "mono" }, url))));
+}
+
+async function viewPublic(username) {
+  setNav("");
+  const [{ data: pr, error }, { rooms, tasks, paths }] = await Promise.all([sb.rpc("public_profile", { p_username: username }), loadCatalog()]);
+  if (error) return fail();
+  if (!pr) return render(h("h1", {}, "Игрок не найден"), h("a", { href: "#/leaderboard" }, "← К рейтингу"));
+  if (pr.hidden) return render(h("h1", {}, pr.username), h("p", { class: "muted" }, "Игрок скрыл свой профиль."));
+  const s = summarize(rooms, tasks, pr.solves || [], paths);
+  const lv = levelOf(s.points);
+  const certs = new Map((pr.certificates || []).map((c) => [c.path_slug, c.id]));
+  const earned = s.badges.filter((b) => b.earned && b.id !== "nohint");
+  const url = location.origin + location.pathname + `#/u/${encodeURIComponent(pr.username)}`;
+  const msg = h("p", { class: "msg", role: "status" });
+  const isMe = profile && profile.username === pr.username;
+  document.title = `${pr.username} — BreachLab`;
+  render(
+    h("section", { class: "card profile-head" },
+      h("div", { class: "avatar", "aria-hidden": "true" }, pr.username.slice(0, 2).toUpperCase()),
+      h("div", { style: "flex:1;min-width:200px" },
+        h("p", { class: "eyebrow" }, `Уровень ${lv.n} · ${lv.name}`),
+        h("h1", { style: "margin:0" }, pr.username),
+        h("small", { class: "muted" }, `На BreachLab с ${fmtDate(pr.joined)}`)),
+      h("button", { type: "button", class: "ghost", onclick: async () => { try { await navigator.clipboard.writeText(url); msg.className = "msg ok"; msg.textContent = "Ссылка на профиль скопирована."; } catch { prompt("Ссылка на профиль:", url); } } }, icon("share", 16), " Поделиться")),
+    msg,
+    isMe && pr.is_public === false ? h("p", { class: "hint" }, "Профиль скрыт: другие его не видят. Включить можно в настройках профиля.") : null,
+    h("div", { class: "stats" },
+      h("div", {}, h("b", {}, s.points), h("span", {}, "очков")),
+      h("div", {}, h("b", {}, s.solved), h("span", {}, "флагов")),
+      h("div", {}, h("b", {}, `${s.roomsDone}/${s.roomsTotal}`), h("span", {}, "комнат")),
+      h("div", {}, h("b", {}, `${s.pathsDone}/${s.pathsTotal}`), h("span", {}, "путей")),
+      h("div", {}, h("b", {}, certs.size), h("span", {}, plural(certs.size, "сертификат", "сертификата", "сертификатов")))),
+    certs.size ? h("h2", {}, "Сертификаты") : null,
+    certs.size ? h("div", { class: "cert-list" }, s.perPath.filter((p) => certs.has(p.path.slug)).map((p) =>
+      h("a", { class: "card cert-mini", href: `#/cert/${certs.get(p.path.slug)}` }, h("span", { class: "room-icon" }, icon("award", 20)),
+        h("div", {}, h("b", {}, p.path.title), h("small", { class: "muted" }, "Открыть сертификат →"))))) : null,
+    h("h2", {}, "Значки"),
+    earned.length ? h("div", { class: "badges" }, earned.map((b) =>
+      h("div", { class: "badge earned", title: b.desc }, h("span", { class: "b-icon" }, icon(b.icon, 26)), h("b", {}, b.name), h("small", {}, b.desc))))
+      : h("p", { class: "muted" }, "Пока нет значков."),
+    h("h2", {}, "Пути обучения"),
+    h("div", { class: "progress-list" }, s.perPath.map((p) => {
+      const pct = p.total ? Math.round((p.done / p.total) * 100) : 0;
+      return h("a", { class: "prog-row", href: `#/path/${p.path.slug}` }, icon(p.complete ? "medal" : "route", 16),
+        h("span", { class: "prog-title" }, p.path.title), h("div", { class: "bar" }, h("i", { style: `width:${pct}%` })),
+        p.complete ? h("span", { class: "ok-text" }, icon("check", 16)) : h("small", { class: "muted" }, `${p.done}/${p.total}`));
+    })));
+}
+
 async function viewPath(slug) {
   setNav("rooms");
   const [{ rooms, tasks, paths }, solves] = await Promise.all([loadCatalog(), mySolves()]);
@@ -272,7 +366,7 @@ async function viewPath(slug) {
     h("p", { class: "muted" }, path.summary),
     h("div", { class: "room-progress" }, h("div", { class: "bar" }, h("i", { style: `width:${pct}%` })),
       h("small", { class: "muted" }, user ? `Пройдено ${pp.done} из ${pp.total} комнат` : "Войдите, чтобы отслеживать прогресс")),
-    pp.complete ? h("div", { class: "done-banner" }, icon("medal", 20), h("b", {}, " Путь пройден! "), h("a", { href: "#/profile" }, "Значки в профиле →")) : null,
+    pp.complete && user ? h("div", { class: "done-banner" }, icon("medal", 20), h("b", {}, " Путь пройден! "), certButton(path.slug)) : null,
     h("ol", { class: "path-steps" }, pp.list.map((p, i) => h("li", { class: `path-step${p.complete ? " done" : ""}${i === nextIdx ? " next" : ""}` },
       h("span", { class: "step-dot", "aria-hidden": "true" }, p.complete ? icon("check", 14) : String(i + 1)),
       h("a", { class: "card path-room", href: `#/room/${p.room.slug}` },
@@ -478,7 +572,7 @@ async function viewLeaderboard() {
   const { data, error } = await sb.rpc("leaderboard", { p_limit: 50 });
   if (error) return fail();
   const rows = (data || []).map((r, i) => h("tr", { class: profile && r.username === profile.username ? "me" : null },
-    h("td", { class: `n${i < 3 ? " top" + (i + 1) : ""}` }, i + 1), h("td", {}, r.username, h("small", { class: "lvl" }, levelOf(r.points).name)),
+    h("td", { class: `n${i < 3 ? " top" + (i + 1) : ""}` }, i + 1), h("td", {}, h("a", { class: "lb-name", href: `#/u/${encodeURIComponent(r.username)}` }, r.username), h("small", { class: "lvl" }, levelOf(r.points).name)),
     h("td", { class: "p" }, r.solved), h("td", { class: "p" }, r.points)));
   render(h("h1", {}, "Рейтинг"),
     rows.length ? h("table", { class: "lb" }, h("thead", {}, h("tr", {}, h("th", {}, "#"), h("th", {}, "Игрок"), h("th", { style: "text-align:right" }, "Флагов"), h("th", { style: "text-align:right" }, "Очки"))), h("tbody", {}, rows))
@@ -489,12 +583,15 @@ async function viewLeaderboard() {
 async function viewProfile() {
   setNav("profile");
   if (!user) return render(h("h1", {}, "Профиль"), needLogin("увидеть свой прогресс"));
-  const [, { rooms, tasks, paths }, solves, hinted] = await Promise.all([loadProfile(), loadCatalog(), mySolves(), myHintTasks()]);
+  const [, { rooms, tasks, paths }, solves, hinted, { data: myCerts }] = await Promise.all([loadProfile(), loadCatalog(), mySolves(), myHintTasks(),
+    sb.from("certificates").select("id,path_slug")]);
+  const certs = new Map((myCerts || []).map((c) => [c.path_slug, c.id]));
   const s = summarize(rooms, tasks, solves, paths, hinted);
   const lv = levelOf(s.points);
   const earned = s.badges.filter((b) => b.earned).length;
 
   const nameMsg = h("p", { class: "msg", role: "status" });
+  const pubMsg = h("p", { class: "msg", role: "status" });
   const nameIn = h("input", { type: "text", value: profile?.username || "", maxlength: "20", "aria-label": "Имя в рейтинге" });
   const delMsg = h("p", { class: "msg err", role: "status" });
   render(
@@ -515,8 +612,11 @@ async function viewProfile() {
     h("div", { class: "badges" }, s.badges.map((b) =>
       h("div", { class: `badge${b.earned ? " earned" : ""}`, title: b.desc },
         h("span", { class: "b-icon" }, icon(b.earned ? b.icon : "lock", 26)), h("b", {}, b.name), h("small", {}, b.desc)))),
-    s.perPath.length ? h("h2", {}, "Пути обучения") : null,
-    s.perPath.length ? h("div", { class: "paths" }, s.perPath.map(pathCard)) : null,
+    s.perPath.length ? h("h2", {}, "Пути обучения и сертификаты") : null,
+    s.perPath.length ? h("div", { class: "paths" }, s.perPath.map((pp) => {
+      const card = pathCard(pp);
+      return pp.complete ? h("div", { class: "path-wrap" }, card, certButton(pp.path.slug, certs.get(pp.path.slug))) : card;
+    })) : null,
     h("h2", {}, "Прогресс по комнатам"),
     h("div", { class: "progress-list" }, s.perRoom.filter((p) => p.total).map((p) => {
       const pct = Math.round((p.done / p.total) * 100);
@@ -526,6 +626,18 @@ async function viewProfile() {
         h("div", { class: "bar" }, h("i", { style: `width:${pct}%` })),
         p.complete ? h("span", { class: "ok-text", "aria-label": "Пройдена" }, icon("check", 16)) : h("small", { class: "muted" }, `${p.done}/${p.total}`));
     })),
+    h("h2", {}, "Публичный профиль"),
+    h("p", { class: "muted", style: "margin-top:0" }, "Страница с твоим уровнем, значками и сертификатами — ей можно поделиться, например в резюме."),
+    h("div", { class: "answer", style: "align-items:center" },
+      profile?.username ? h("a", { class: "btn-small", href: `#/u/${encodeURIComponent(profile.username)}` }, icon("share", 16), " Открыть мой профиль") : null,
+      h("label", { class: "check toggle" },
+        h("input", { type: "checkbox", checked: profile?.is_public !== false, onchange: async (e) => {
+          const { error } = await sb.rpc("set_profile_public", { p_public: e.target.checked });
+          pubMsg.className = error ? "msg err" : "msg ok";
+          pubMsg.textContent = error ? "Не получилось сохранить." : e.target.checked ? "Профиль виден всем." : "Профиль скрыт.";
+          if (!error && profile) profile.is_public = e.target.checked;
+        } }), h("span", {}, "Показывать профиль всем"))),
+    pubMsg,
     h("h2", {}, "Имя в рейтинге"),
     h("form", { class: "answer", onsubmit: async (e) => {
       e.preventDefault();
@@ -608,12 +720,16 @@ function viewRules() {
 }
 
 // ---------- маршрутизатор ----------
+const DEFAULT_TITLE = document.title;
 async function route() {
+  document.title = DEFAULT_TITLE;
   const hash = location.hash.startsWith("#/") ? location.hash.slice(2) : "";
   const [page, arg] = hash.split("/");
   try {
     if (page === "room" && arg) await viewRoom(decodeURIComponent(arg));
     else if (page === "path" && arg) await viewPath(decodeURIComponent(arg));
+    else if (page === "u" && arg) await viewPublic(decodeURIComponent(arg));
+    else if (page === "cert" && arg) await viewCert(decodeURIComponent(arg));
     else if (page === "tools") viewTools();
     else if (page === "leaderboard") await viewLeaderboard();
     else if (page === "profile") await viewProfile();

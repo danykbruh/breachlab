@@ -251,3 +251,45 @@ input.search:focus,select.sort:focus{outline:none;border-color:var(--accent);box
 .hint .ic{color:var(--warn);margin-top:2px}
 button.hint-btn{color:var(--warn);text-decoration:none;margin-top:6px}
 button.hint-btn:hover:not(:disabled){color:#FCD34D}
+
+/* ---------- публичный профиль ---------- */
+.lb-name{color:inherit;text-decoration:none;font-weight:600}
+.lb-name:hover{color:var(--accent);text-decoration:underline}
+.cert-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+a.card.cert-mini{flex-direction:row;align-items:center;gap:14px}
+a.card.cert-mini div{display:flex;flex-direction:column}
+.path-wrap{display:flex;flex-direction:column;gap:8px}
+.path-wrap > a.card{flex:1}
+.cert-btn,.path-wrap .btn-small{align-self:flex-start}
+.toggle{display:inline-flex!important;color:var(--ink)!important;font-size:15px;cursor:pointer;align-items:center!important}
+.toggle input{width:18px;height:18px;margin:0}
+
+/* ---------- сертификат ---------- */
+.cert-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.cert{position:relative;overflow:hidden;margin:8px auto 0;max-width:860px;padding:56px 48px 40px;text-align:center;border-radius:18px;
+  background:radial-gradient(600px 300px at 50% -10%,rgba(255,59,59,.18),transparent 70%),linear-gradient(180deg,#141416,#0A0A0B);
+  border:1px solid var(--accent-line);box-shadow:0 30px 80px -40px rgba(255,59,59,.6);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cert::before{content:"";position:absolute;inset:12px;border:1px dashed rgba(255,59,59,.3);border-radius:12px;pointer-events:none}
+.cert-corner{position:absolute;width:90px;height:90px;border:3px solid var(--accent)}
+.cert-corner.tl{top:22px;left:22px;border-right:0;border-bottom:0;border-radius:10px 0 0 0}
+.cert-corner.br{bottom:22px;right:22px;border-left:0;border-top:0;border-radius:0 0 10px 0}
+.cert-logo{display:inline-flex;align-items:center;gap:10px;font:800 18px var(--mono);color:var(--ink)}
+.cert-kicker{margin:26px 0 6px;font:600 13px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--accent)}
+.cert-path{font-size:clamp(28px,5vw,44px);margin:0 0 26px;letter-spacing:-.03em}
+.cert-text{color:var(--muted);margin:6px auto;max-width:560px}
+.cert-name{font:800 clamp(30px,6vw,52px)/1.1 var(--body);margin:10px 0;color:#fff;text-shadow:0 0 30px rgba(255,59,59,.45);letter-spacing:-.02em;word-break:break-word}
+.cert-foot{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center;margin-top:36px;padding-top:24px;border-top:1px solid var(--line)}
+.cert-foot > div{display:flex;flex-direction:column;gap:2px}
+.cert-foot small{color:var(--dim);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+.cert-foot b{font-size:16px}
+.cert-seal{width:76px;height:76px;border-radius:50%;display:grid!important;place-items:center;background:var(--accent);color:var(--accent-ink);box-shadow:0 0 30px rgba(255,59,59,.55)}
+.cert-verify{margin:24px 0 0;font-size:12px;color:var(--dim);word-break:break-all}
+.mono{font-family:var(--mono)}
+@media (max-width:640px){.cert{padding:44px 20px 28px}.cert-corner{width:50px;height:50px}.cert-foot{grid-template-columns:1fr;justify-items:center}}
+@media print{
+  @page{size:A4 landscape;margin:10mm}
+  body{background:#070708!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body::before,.top,.foot,.no-print,.msg,.skip{display:none!important}
+  main{max-width:none;padding:0}
+  .cert{box-shadow:none;margin:0 auto;page-break-inside:avoid}
+}
