@@ -11,6 +11,7 @@ if (!window.supabase || !cfg.supabaseUrl || cfg.supabaseUrl.includes("ВАШ")) 
 const sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabasePublishableKey);
 let user = null, profile = null;
 let filter = "all";                       // выбранная категория на главной
+let query = "", sortBy = "order";         // поиск и сортировка комнат
 
 // ---------- помощники ----------
 function h(tag, attrs = {}, ...kids) {
@@ -47,6 +48,9 @@ const ICONS = {
   check: '<path d="M20 6 9 17l-5-5"/>',
   trophy: '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/>',
   arrow: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+  route: '<circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>',
+  bulb: '<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>',
+  medal: '<path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15"/><path d="M11 12 5.12 2.2"/><path d="m13 12 5.88-9.8"/><circle cx="12" cy="17" r="5"/>',
 };
 function icon(name, size = 18) {
   const span = document.createElement("span");
@@ -116,6 +120,9 @@ const BADGES = [
   { id: "p300",    icon: "zap", name: "Три сотни",        desc: "Набрать 300 очков",                  test: (s) => s.points >= 300 },
   { id: "streak3", icon: "flame", name: "В ритме",          desc: "Решать задания 3 дня подряд",        test: (s) => s.bestStreak >= 3 },
   { id: "streak7", icon: "calendar", name: "Неделя без пропусков", desc: "Решать задания 7 дней подряд",   test: (s) => s.bestStreak >= 7 },
+  { id: "path1",   icon: "route", name: "Первый путь",      desc: "Пройти путь обучения целиком",       test: (s) => s.pathsDone >= 1 },
+  { id: "paths",   icon: "medal", name: "Все дороги",       desc: "Пройти все пути обучения",           test: (s) => s.pathsTotal > 0 && s.pathsDone === s.pathsTotal },
+  { id: "nohint",  icon: "bulb",  name: "Без подсказок",    desc: "Пройти сложную комнату, не открыв ни одной подсказки", test: (s) => s.hardNoHint },
   { id: "night",   icon: "moon", name: "Ночная смена",     desc: "Решить задание между 00:00 и 05:00", test: (s) => s.night },
   { id: "soc",     icon: "shield", name: "Аналитик SOC",     desc: "Пройти все комнаты SOC",             test: (s) => s.catDone("soc") },
   { id: "web",     icon: "globe", name: "Веб-детектив",     desc: "Пройти все веб-комнаты",             test: (s) => s.catDone("web") },
@@ -142,10 +149,21 @@ async function loadCatalog() {
     sb.from("tasks").select("id,room_id,points"),
   ]);
   if (error) throw error;
-  return { rooms: rooms || [], tasks: tasks || [] };
+  const { data: paths } = await sb.from("paths").select("slug,title,summary,room_slugs,position").order("position");
+  return { rooms: rooms || [], tasks: tasks || [], paths: paths || [] };
 }
 // Сводка прогресса: по комнатам, очки, серия, значки
-function summarize(rooms, tasks, solves) {
+async function myHintTasks() {
+  if (!user) return new Set();
+  const { data } = await sb.from("hint_unlocks").select("task_id");
+  return new Set((data || []).map((r) => r.task_id));
+}
+function pathProgress(path, perRoom) {
+  const list = path.room_slugs.map((slug) => perRoom.find((p) => p.room.slug === slug)).filter(Boolean);
+  const done = list.filter((p) => p.complete).length;
+  return { path, list, done, total: list.length, complete: list.length > 0 && done === list.length };
+}
+function summarize(rooms, tasks, solves, paths = [], hinted = new Set()) {
   const solvedIds = new Set(solves.map((s) => s.task_id));
   const perRoom = rooms.map((r) => {
     const ids = tasks.filter((t) => t.room_id === r.id).map((t) => t.id);
@@ -163,6 +181,11 @@ function summarize(rooms, tasks, solves) {
     night: dates.some((d) => new Date(d).getHours() < 5),
     catDone: (c) => { const list = perRoom.filter((p) => p.room.category === c && p.total); return list.length > 0 && list.every((p) => p.complete); },
   };
+  s.perPath = paths.map((p) => pathProgress(p, perRoom));
+  s.pathsTotal = s.perPath.length;
+  s.pathsDone = s.perPath.filter((p) => p.complete).length;
+  s.hardNoHint = perRoom.some((p) => p.complete && p.room.difficulty === "hard" &&
+    !tasks.some((t) => t.room_id === p.room.id && hinted.has(t.id)));
   s.badges = BADGES.map((b) => ({ ...b, earned: !!b.test(s) }));
   s.next = perRoom.find((p) => p.total && !p.complete) || null;
   return s;
@@ -171,15 +194,28 @@ function summarize(rooms, tasks, solves) {
 // ---------- главная ----------
 async function viewRooms() {
   setNav("rooms");
-  const [{ rooms, tasks }, solves, stats] = await Promise.all([
-    loadCatalog(), mySolves(), sb.rpc("platform_stats").then((r) => r.data).catch(() => null),
+  const [{ rooms, tasks, paths }, solves, stats, hinted] = await Promise.all([
+    loadCatalog(), mySolves(), sb.rpc("platform_stats").then((r) => r.data).catch(() => null), myHintTasks(),
   ]);
-  const s = summarize(rooms, tasks, solves);
+  const s = summarize(rooms, tasks, solves, paths, hinted);
   const cats = [...new Set(rooms.map((r) => r.category))];
 
   const grid = h("div", { class: "grid" });
+  const DIFF = { easy: 1, medium: 2, hard: 3 };
+  const search = h("input", { type: "search", class: "search", placeholder: "Поиск комнаты…", "aria-label": "Поиск комнаты", value: query, oninput: (e) => { query = e.target.value; draw(); } });
+  const sortSel = h("select", { class: "sort", "aria-label": "Сортировка", onchange: (e) => { sortBy = e.target.value; draw(); } },
+    [["order", "По порядку"], ["easy", "Сначала лёгкие"], ["hard", "Сначала сложные"], ...(user ? [["todo", "Сначала непройденные"]] : [])]
+      .map(([v, t]) => h("option", { value: v, selected: v === sortBy }, t)));
+  const empty = h("p", { class: "muted", hidden: true }, "Ничего не нашлось.");
   const draw = () => {
-    grid.replaceChildren(...s.perRoom.filter((p) => filter === "all" || p.room.category === filter).map(roomCard));
+    const q = query.trim().toLowerCase();
+    let list = s.perRoom.filter((p) => (filter === "all" || p.room.category === filter) &&
+      (!q || (p.room.title + " " + p.room.summary).toLowerCase().includes(q)));
+    if (sortBy === "easy") list = [...list].sort((a, b) => DIFF[a.room.difficulty] - DIFF[b.room.difficulty]);
+    if (sortBy === "hard") list = [...list].sort((a, b) => DIFF[b.room.difficulty] - DIFF[a.room.difficulty]);
+    if (sortBy === "todo") list = [...list].sort((a, b) => a.complete - b.complete);
+    grid.replaceChildren(...list.map(roomCard));
+    empty.hidden = list.length > 0;
     chips.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.cat === filter ? "true" : "false"));
   };
   const roomCard = ({ room: r, total, done, complete }) => {
@@ -201,8 +237,48 @@ async function viewRooms() {
   if (!cats.includes(filter)) filter = "all";
 
   const top = user ? welcomeBack(s) : hero(stats);
-  render(top, h("h2", { id: "rooms" }, "Комнаты"), chips, rooms.length ? grid : h("p", { class: "muted" }, "Комнат пока нет."));
+  const pathCards = s.perPath.length ? h("div", { class: "paths" }, s.perPath.map(pathCard)) : null;
+  render(top,
+    pathCards ? h("h2", {}, "Пути обучения") : null, pathCards,
+    h("h2", { id: "rooms" }, "Комнаты"),
+    h("div", { class: "toolbar" }, search, sortSel), chips,
+    rooms.length ? grid : h("p", { class: "muted" }, "Комнат пока нет."), empty);
   draw();
+}
+function pathCard(pp) {
+  const pct = pp.total ? Math.round((pp.done / pp.total) * 100) : 0;
+  return h("a", { class: `card path${pp.complete ? " complete" : ""}`, href: `#/path/${pp.path.slug}` },
+    h("div", { class: "room-top" }, h("span", { class: "room-icon" }, icon(pp.complete ? "medal" : "route", 20)),
+      h("span", { class: "tag" }, `${pp.total} ${plural(pp.total, "комната", "комнаты", "комнат")}`)),
+    h("h3", {}, pp.path.title),
+    h("p", { class: "muted", style: "margin:0" }, pp.path.summary),
+    h("div", { class: "room-foot" },
+      user ? h("div", { class: "bar" }, h("i", { style: `width:${pct}%` })) : null,
+      h("small", { class: "muted" }, user ? (pp.complete ? h("span", { class: "ok-text" }, icon("check", 14), " Путь пройден") : `${pp.done} из ${pp.total} комнат`) : "Начать путь")));
+}
+async function viewPath(slug) {
+  setNav("rooms");
+  const [{ rooms, tasks, paths }, solves] = await Promise.all([loadCatalog(), mySolves()]);
+  const path = paths.find((p) => p.slug === slug);
+  if (!path) return render(h("h1", {}, "Путь не найден"), h("a", { href: "#/" }, "← На главную"));
+  const s = summarize(rooms, tasks, solves, [path]);
+  const pp = s.perPath[0];
+  const pct = pp.total ? Math.round((pp.done / pp.total) * 100) : 0;
+  const nextIdx = pp.list.findIndex((p) => !p.complete);
+  render(
+    h("a", { href: "#/", class: "muted" }, "← Все комнаты"),
+    h("p", { class: "eyebrow", style: "margin-top:14px" }, icon("route", 14), " Путь обучения"),
+    h("h1", {}, path.title),
+    h("p", { class: "muted" }, path.summary),
+    h("div", { class: "room-progress" }, h("div", { class: "bar" }, h("i", { style: `width:${pct}%` })),
+      h("small", { class: "muted" }, user ? `Пройдено ${pp.done} из ${pp.total} комнат` : "Войдите, чтобы отслеживать прогресс")),
+    pp.complete ? h("div", { class: "done-banner" }, icon("medal", 20), h("b", {}, " Путь пройден! "), h("a", { href: "#/profile" }, "Значки в профиле →")) : null,
+    h("ol", { class: "path-steps" }, pp.list.map((p, i) => h("li", { class: `path-step${p.complete ? " done" : ""}${i === nextIdx ? " next" : ""}` },
+      h("span", { class: "step-dot", "aria-hidden": "true" }, p.complete ? icon("check", 14) : String(i + 1)),
+      h("a", { class: "card path-room", href: `#/room/${p.room.slug}` },
+        h("div", { class: "tags" }, h("span", { class: "tag" }, catIcon(p.room.category, 12), ` ${LABEL[p.room.category]}`), h("span", { class: `tag ${p.room.difficulty}` }, LABEL[p.room.difficulty])),
+        h("h3", {}, p.room.title),
+        h("small", { class: "muted" }, p.complete ? "Пройдена" : i === nextIdx ? `Следующая · ${p.done} из ${p.total} заданий` : `${p.total} заданий`))))));
 }
 function hero(stats) {
   const num = (v, label) => h("div", {}, h("b", {}, v ?? "—"), h("span", {}, label));
@@ -238,11 +314,13 @@ async function viewRoom(slug) {
   if (error) return fail();
   if (!room) return render(h("h1", {}, "Комната не найдена"), h("a", { href: "#/" }, "← Все комнаты"));
   const [{ data: tasks }, solves, { data: nextRooms }] = await Promise.all([
-    sb.from("tasks").select("id,position,question,hint,answer_mask,points").eq("room_id", room.id).order("position"),
+    sb.from("tasks").select("id,position,question,has_hint,answer_mask,points,choices").eq("room_id", room.id).order("position"),
     mySolves(),
     sb.from("rooms").select("slug,title").gt("position", room.position).order("position").limit(1),
   ]);
   const solved = new Set(solves.map((s) => s.task_id));
+  const hints = new Map();
+  if (user) { const { data: hs } = await sb.rpc("room_hints", { p_room_id: room.id }); (hs || []).forEach((x) => hints.set(x.task_id, x.hint)); }
   const list = tasks || [];
   const total = list.length, maxPts = list.reduce((a, t) => a + t.points, 0);
   const progress = h("div", { class: "room-progress" });
@@ -256,7 +334,7 @@ async function viewRoom(slug) {
       h("small", { class: "muted" }, user ? `Решено ${done} из ${total} · ${maxPts} очков в комнате` : `${total} заданий · ${maxPts} очков`));
     banner.hidden = !(user && total && done === total);
   };
-  const cards = list.map((t) => taskCard(t, solved.has(t.id), () => { solved.add(t.id); update(); }));
+  const cards = list.map((t) => taskCard(t, solved.has(t.id), () => { solved.add(t.id); update(); }, hints.get(t.id)));
   const files = Array.isArray(room.files) && room.files.length
     ? h("div", { class: "files" }, h("span", { class: "muted" }, "Файлы комнаты:"), room.files.map((f) => h("a", { class: "btn-small", href: f.url, download: "" }, icon("download", 16), ` ${f.name}`))) : null;
   render(
@@ -272,16 +350,24 @@ async function viewRoom(slug) {
   update();
 }
 
-function taskCard(t, isSolved, onSolved) {
+const hintCost = (pts) => Math.max(1, Math.round(pts * 0.3));
+function taskCard(t, isSolved, onSolved, unlockedHint) {
   const msg = h("p", { class: "msg", role: "status" });
-  const input = h("input", { type: "text", class: "mono", placeholder: t.answer_mask || "Ответ", "aria-label": `Ответ на задание ${t.position}`,
-                             maxlength: "200", autocomplete: "off", autocapitalize: "off", spellcheck: "false", disabled: !user || isSolved });
-  const btn = h("button", { type: "submit", disabled: !user || isSolved }, isSolved ? "Решено ✓" : "Проверить");
+  const locked = !user || isSolved;
+  const choices = Array.isArray(t.choices) && t.choices.length ? t.choices : null;
+  const group = `task-${t.id}`;
+  const input = choices ? null : h("input", { type: "text", class: "mono", placeholder: t.answer_mask || "Ответ", "aria-label": `Ответ на задание ${t.position}`,
+                             maxlength: "200", autocomplete: "off", autocapitalize: "off", spellcheck: "false", disabled: locked });
+  const radios = choices ? h("div", { class: "choices", role: "radiogroup", "aria-label": `Варианты ответа на задание ${t.position}` },
+    choices.map((c) => h("label", { class: "choice" }, h("input", { type: "radio", name: group, value: c, disabled: locked, onchange: () => { msg.textContent = ""; } }), h("span", {}, c)))) : null;
+  const getAnswer = () => choices ? (radios.querySelector("input:checked")?.value || "") : input.value.trim();
+  const disableAll = () => { if (input) input.disabled = true; radios?.querySelectorAll("input").forEach((r) => (r.disabled = true)); };
+  const btn = h("button", { type: "submit", disabled: locked }, isSolved ? "Решено ✓" : "Проверить");
   const card = h("div", { class: `task${isSolved ? " solved" : ""}` });
-  const form = h("form", { class: "answer", onsubmit: async (e) => {
+  const form = h("form", { class: `answer${choices ? " answer-choices" : ""}`, onsubmit: async (e) => {
     e.preventDefault();
-    const answer = input.value.trim();
-    if (!answer) { input.focus(); return; }
+    const answer = getAnswer();
+    if (!answer) { msg.className = "msg err"; msg.textContent = choices ? "Выберите вариант." : "Введите ответ."; (input || radios.querySelector("input"))?.focus(); return; }
     btn.disabled = true; msg.className = "msg"; msg.textContent = "Проверяю…";
     const { data, error } = await sb.rpc("submit_answer", { p_task_id: t.id, p_answer: answer });
     btn.disabled = false;
@@ -289,20 +375,36 @@ function taskCard(t, isSolved, onSolved) {
     if (data.error === "rate_limited") { msg.className = "msg err"; msg.textContent = "Слишком много попыток — подождите минуту."; return; }
     if (data.error) { msg.className = "msg err"; msg.textContent = "Задание недоступно."; return; }
     if (data.correct) {
-      card.classList.add("solved", "pop"); input.disabled = true; btn.disabled = true; btn.textContent = "Решено ✓";
-      msg.className = "msg ok"; msg.textContent = data.already ? "Уже решено." : `Верно! +${data.points} очков.`;
+      card.classList.add("solved", "pop"); disableAll(); btn.disabled = true; btn.textContent = "Решено ✓";
+      hintBtn?.remove();
+      msg.className = "msg ok"; msg.textContent = data.already ? "Уже решено." : `Верно! +${data.points} очков${data.hint_used ? " (с подсказкой)" : ""}.`;
       onSolved && onSolved();
     } else {
-      msg.className = "msg err"; msg.textContent = "Неверно. Попробуйте ещё."; input.select();
+      msg.className = "msg err"; msg.textContent = "Неверно. Попробуйте ещё."; input?.select();
       card.classList.remove("shake"); void card.offsetWidth; card.classList.add("shake");
     }
-  } }, input, btn);
-  const hintBox = t.hint ? h("p", { class: "hint", hidden: true }, "Подсказка: " + t.hint) : null;
+  } }, input || radios, btn);
+
+  // Подсказка: бесплатно после решения, до решения — за часть очков
+  const cost = hintCost(t.points);
+  const hintBox = h("p", { class: "hint", hidden: !unlockedHint }, unlockedHint ? [icon("bulb", 15), " ", unlockedHint] : null);
+  let hintBtn = null;
+  if (t.has_hint && !unlockedHint && user) {
+    hintBtn = h("button", { type: "button", class: "link hint-btn", onclick: async () => {
+      if (!isSolved && !card.classList.contains("solved") && hintBtn.dataset.confirm !== "1") {
+        hintBtn.dataset.confirm = "1"; hintBtn.textContent = `Точно открыть? За это задание будет на ${cost} очк. меньше`; return;
+      }
+      hintBtn.disabled = true;
+      const { data, error } = await sb.rpc("unlock_hint", { p_task_id: t.id });
+      if (error || !data?.hint) { hintBtn.disabled = false; msg.className = "msg err"; msg.textContent = "Не получилось открыть подсказку."; return; }
+      hintBox.replaceChildren(icon("bulb", 15), " ", data.hint); hintBox.hidden = false; hintBtn.remove();
+      if (!card.classList.contains("solved")) pts.textContent = `${t.points - cost} очк.`;
+    } }, isSolved ? "Показать подсказку" : `Подсказка (−${cost} очк.)`);
+  }
+  const pts = h("span", { class: "pts" }, `${unlockedHint && !isSolved ? t.points - cost : t.points} очк.`);
   card.append(...[
-    h("div", { class: "q" }, h("div", {}, h("span", { class: "num" }, `#${t.position} `), t.question), h("span", { class: "pts" }, `${t.points} очк.`)),
-    form, msg,
-    hintBox ? h("button", { type: "button", class: "link", onclick: (e) => { hintBox.hidden = false; e.target.remove(); } }, "Показать подсказку") : null,
-    hintBox].filter(Boolean));
+    h("div", { class: "q" }, h("div", {}, h("span", { class: "num" }, `#${t.position} `), t.question), pts),
+    form, msg, hintBtn, hintBox].filter(Boolean));
   return card;
 }
 
@@ -387,8 +489,8 @@ async function viewLeaderboard() {
 async function viewProfile() {
   setNav("profile");
   if (!user) return render(h("h1", {}, "Профиль"), needLogin("увидеть свой прогресс"));
-  const [, { rooms, tasks }, solves] = await Promise.all([loadProfile(), loadCatalog(), mySolves()]);
-  const s = summarize(rooms, tasks, solves);
+  const [, { rooms, tasks, paths }, solves, hinted] = await Promise.all([loadProfile(), loadCatalog(), mySolves(), myHintTasks()]);
+  const s = summarize(rooms, tasks, solves, paths, hinted);
   const lv = levelOf(s.points);
   const earned = s.badges.filter((b) => b.earned).length;
 
@@ -413,6 +515,8 @@ async function viewProfile() {
     h("div", { class: "badges" }, s.badges.map((b) =>
       h("div", { class: `badge${b.earned ? " earned" : ""}`, title: b.desc },
         h("span", { class: "b-icon" }, icon(b.earned ? b.icon : "lock", 26)), h("b", {}, b.name), h("small", {}, b.desc)))),
+    s.perPath.length ? h("h2", {}, "Пути обучения") : null,
+    s.perPath.length ? h("div", { class: "paths" }, s.perPath.map(pathCard)) : null,
     h("h2", {}, "Прогресс по комнатам"),
     h("div", { class: "progress-list" }, s.perRoom.filter((p) => p.total).map((p) => {
       const pct = Math.round((p.done / p.total) * 100);
@@ -509,6 +613,7 @@ async function route() {
   const [page, arg] = hash.split("/");
   try {
     if (page === "room" && arg) await viewRoom(decodeURIComponent(arg));
+    else if (page === "path" && arg) await viewPath(decodeURIComponent(arg));
     else if (page === "tools") viewTools();
     else if (page === "leaderboard") await viewLeaderboard();
     else if (page === "profile") await viewProfile();
