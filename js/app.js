@@ -464,14 +464,14 @@ async function viewRoom(slug, focusId) {
   if (error) return fail();
   if (!room) return render(h("h1", {}, "Комната не найдена"), h("a", { href: "#/" }, "← Все комнаты"));
   const [{ data: tasks }, solves, { data: nextRooms }, daily] = await Promise.all([
-    sb.from("tasks").select("id,position,question,has_hint,answer_mask,points,choices").eq("room_id", room.id).order("position"),
+    sb.from("tasks").select("id,position,question,has_hint,has_hint2,answer_mask,points,choices").eq("room_id", room.id).order("position"),
     mySolves(),
     sb.from("rooms").select("slug,title").gt("position", room.position).order("position").limit(1),
     sb.rpc("daily_task").then((r) => r.data).catch(() => null),
   ]);
   const solved = new Set(solves.map((s) => s.task_id));
   const hints = new Map();
-  if (user) { const { data: hs } = await sb.rpc("room_hints", { p_room_id: room.id }); (hs || []).forEach((x) => hints.set(x.task_id, x.hint)); }
+  if (user) { const { data: hs } = await sb.rpc("room_hints", { p_room_id: room.id }); (hs || []).forEach((x) => { const o = hints.get(x.task_id) || {}; o[x.level || 1] = x.hint; hints.set(x.task_id, o); }); }
   const list = tasks || [];
   const total = list.length, maxPts = list.reduce((a, t) => a + t.points, 0);
   const progress = h("div", { class: "room-progress" });
@@ -503,7 +503,6 @@ async function viewRoom(slug, focusId) {
   if (target) { target.classList.add("focus"); setTimeout(() => target.scrollIntoView({ behavior: "smooth", block: "center" }), 150); }
 }
 
-const hintCost = (pts) => Math.max(1, Math.round(pts * 0.3));
 function taskCard(t, isSolved, onSolved, unlockedHint, isDaily) {
   const msg = h("p", { class: "msg", role: "status" });
   const locked = !user || isSolved;
@@ -529,8 +528,8 @@ function taskCard(t, isSolved, onSolved, unlockedHint, isDaily) {
     if (data.error) { msg.className = "msg err"; msg.textContent = "Задание недоступно."; return; }
     if (data.correct) {
       card.classList.add("solved", "pop"); disableAll(); btn.disabled = true; btn.textContent = "Решено ✓";
-      hintBtn?.remove();
-      msg.className = "msg ok"; msg.textContent = data.already ? "Уже решено." : `Верно! +${data.points} очков${data.daily_bonus ? ` (с бонусом задания дня +${data.daily_bonus})` : ""}${data.hint_used ? " (с подсказкой)" : ""}.`;
+      drawHints(); showPts();
+      msg.className = "msg ok"; msg.textContent = data.already ? "Уже решено." : `Верно! +${data.points} очков${data.daily_bonus ? ` (с бонусом задания дня +${data.daily_bonus})` : ""}${data.hint_used ? ` (подсказки −${data.hint_penalty || 0})` : ""}.`;
       onSolved && onSolved();
     } else {
       msg.className = "msg err"; msg.textContent = "Неверно. Попробуйте ещё."; input?.select();
@@ -538,27 +537,42 @@ function taskCard(t, isSolved, onSolved, unlockedHint, isDaily) {
     }
   } }, input || radios, btn);
 
-  // Подсказка: бесплатно после решения, до решения - за часть очков
-  const cost = hintCost(t.points);
-  const hintBox = h("p", { class: "hint", hidden: !unlockedHint }, unlockedHint ? [icon("bulb", 15), " ", unlockedHint] : null);
+  // Две подсказки: первая простая (−2 очка), вторая объясняет большую часть решения (−3 очка).
+  // После решения задания подсказки открываются бесплатно.
+  const COST = { 1: 2, 2: 3 };
+  const opened = { 1: unlockedHint?.[1] || null, 2: unlockedHint?.[2] || null };
+  const penalty = () => (opened[1] ? COST[1] : 0) + (opened[2] ? COST[2] : 0);
+  const solvedNow = () => isSolved || card.classList.contains("solved");
+  const showPts = () => { pts.textContent = !solvedNow() && penalty() ? `${Math.max(1, t.points - penalty())} из ${t.points} очк.` : `${t.points} очк.`; };
+  const hintWrap = h("div", { class: "hints" });
+  const hintBox = (lvl, text) => h("p", { class: `hint hint-${lvl}` }, icon("bulb", 15), h("span", {}, h("b", {}, `Подсказка ${lvl}: `), text));
+  const hintBtns = h("div", { class: "hint-btns" });
   let hintBtn = null;
-  if (t.has_hint && !unlockedHint && user) {
+  function drawHints() {
+    hintWrap.replaceChildren(...[1, 2].filter((l) => opened[l]).map((l) => hintBox(l, opened[l])));
+    hintBtns.replaceChildren();
+    if (!user) return;
+    const next = !opened[1] && t.has_hint ? 1 : !opened[2] && t.has_hint2 ? 2 : null;
+    if (!next) return;
+    const free = solvedNow();
     hintBtn = h("button", { type: "button", class: "link hint-btn", onclick: async () => {
-      if (!isSolved && !card.classList.contains("solved") && hintBtn.dataset.confirm !== "1") {
-        hintBtn.dataset.confirm = "1"; hintBtn.textContent = `Точно открыть? За это задание будет на ${cost} очк. меньше`; return;
+      if (!free && !solvedNow() && hintBtn.dataset.confirm !== "1") {
+        hintBtn.dataset.confirm = "1";
+        hintBtn.textContent = `Открыть подсказку ${next}? За задание будет на ${COST[next]} очк. меньше`; return;
       }
       hintBtn.disabled = true;
-      const { data, error } = await sb.rpc("unlock_hint", { p_task_id: t.id });
+      const { data, error } = await sb.rpc("unlock_hint", { p_task_id: t.id, p_level: next });
       if (error || !data?.hint) { hintBtn.disabled = false; msg.className = "msg err"; msg.textContent = "Не получилось открыть подсказку."; return; }
-      hintBox.replaceChildren(icon("bulb", 15), " ", data.hint); hintBox.hidden = false; hintBtn.remove();
-      if (!card.classList.contains("solved")) pts.textContent = `${t.points - cost} очк.`;
-    } }, isSolved ? "Показать подсказку" : `Подсказка (−${cost} очк.)`);
+      opened[next] = data.hint; drawHints(); showPts();
+    } }, free ? `Показать подсказку ${next}` : next === 1 ? `Подсказка 1 (−${COST[1]} очк.)` : `Подсказка 2 - подробнее (−${COST[2]} очк.)`);
+    hintBtns.append(hintBtn);
   }
-  const pts = h("span", { class: "pts" }, `${unlockedHint && !isSolved ? t.points - cost : t.points} очк.`);
+  const pts = h("span", { class: "pts" });
+  drawHints(); showPts();
   card.append(...[
     isDaily ? h("span", { class: "daily-flag" }, icon("calendarStar", 14), " Задание дня · +10 бонус") : null,
     h("div", { class: "q" }, h("div", {}, h("span", { class: "num" }, `#${t.position} `), t.question), pts),
-    form, msg, hintBtn, hintBox].filter(Boolean));
+    form, msg, hintWrap, hintBtns].filter(Boolean));
   return card;
 }
 
