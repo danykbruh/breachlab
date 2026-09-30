@@ -132,6 +132,7 @@ const BADGES = [
   { id: "web",     icon: "globe", name: "Веб-детектив",     desc: "Пройти все веб-комнаты",             test: (s) => s.catDone("web") },
   { id: "linux",   icon: "terminal", name: "Пингвин",          desc: "Пройти все комнаты по Linux",        test: (s) => s.catDone("linux") },
   { id: "crypto",  icon: "lock", name: "Шифровальщик",     desc: "Пройти все комнаты по криптографии", test: (s) => s.catDone("crypto") },
+  { id: "osint",   icon: "radar", name: "Разведчик",        desc: "Пройти все комнаты по OSINT",        test: (s) => s.catDone("osint") },
   { id: "forensics", icon: "search", name: "Криминалист",    desc: "Пройти все комнаты по форензике",    test: (s) => s.catDone("forensics") },
 ];
 

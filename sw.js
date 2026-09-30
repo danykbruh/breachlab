@@ -1,8 +1,8 @@
 // BreachLab — service worker: сайт открывается как приложение и работает при плохой сети.
 // Стратегия «сначала сеть»: всегда пробуем свежую версию, кеш — только запасной вариант.
 // Запросы к Supabase и другим сайтам не трогаем.
-const VERSION = "bl-v1";
-const SHELL = ["./", "index.html", "css/styles.css?v=9", "js/config.js", "js/app.js?v=9", "js/hero3d.js?v=2",
+const VERSION = "bl-v2";
+const SHELL = ["./", "index.html", "css/styles.css?v=9", "js/config.js", "js/app.js?v=10", "js/hero3d.js?v=2",
                "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png"];
 
 self.addEventListener("install", (e) => {
