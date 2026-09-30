@@ -307,3 +307,14 @@ a.card.cert-mini div{display:flex;flex-direction:column}
   .hero-grid{grid-template-columns:1fr}
   .hero-visual{max-width:340px;margin:0 auto;max-height:340px}
 }
+
+/* ---------- глобус в приветствии (после входа) ---------- */
+.welcome{position:relative;overflow:hidden}
+.welcome-grid{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:12px;align-items:center}
+.welcome-main{min-width:0}
+.welcome-visual{position:relative;width:260px;height:260px;margin:-18px -10px -18px 0}
+.welcome-visual::before{content:"";position:absolute;inset:14%;border-radius:50%;background:radial-gradient(circle,rgba(255,59,59,.22),transparent 65%);filter:blur(18px)}
+@media (max-width:720px){
+  .welcome-grid{grid-template-columns:1fr}
+  .welcome-visual{order:-1;width:200px;height:200px;margin:-6px auto -10px}
+}

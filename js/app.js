@@ -393,15 +393,17 @@ function hero(stats) {
 function welcomeBack(s) {
   const lv = levelOf(s.points);
   return h("section", { class: "card welcome" },
-    h("div", { class: "welcome-row" },
-      h("div", {},
+    h("div", { class: "welcome-grid" },
+      h("div", { class: "welcome-main" },
         h("p", { class: "eyebrow" }, `Уровень ${lv.n} · ${lv.name}`),
         h("h1", { style: "margin:0" }, `Привет, ${profile?.username || "агент"}!`),
-        h("p", { class: "muted", style: "margin:6px 0 0" }, `${s.points} очков · ${s.solved} ${plural(s.solved, "флаг", "флага", "флагов")}`, s.streak ? h("span", { class: "streak" }, " · ", icon("flame", 15), ` ${s.streak} ${plural(s.streak, "день", "дня", "дней")} подряд`) : null)),
-      s.next ? h("a", { class: "btn", href: `#/room/${s.next.room.slug}` }, s.next.done ? "Продолжить " : "Следующая комната ", icon("arrow", 16)) : h("span", { class: "tag easy" }, "Все комнаты пройдены")),
-    h("div", { class: "bar xp", role: "img", "aria-label": `До следующего уровня ${lv.pct}%` }, h("i", { style: `width:${lv.pct}%` })),
-    h("small", { class: "muted" }, lv.to ? `До уровня ${lv.n + 1}: ${lv.to - s.points} очк.` : "Максимальный уровень"),
-    s.next ? h("p", { style: "margin:10px 0 0" }, h("span", { class: "muted" }, "Дальше: "), h("a", { href: `#/room/${s.next.room.slug}` }, s.next.room.title)) : null);
+        h("p", { class: "muted", style: "margin:6px 0 0" }, `${s.points} очков · ${s.solved} ${plural(s.solved, "флаг", "флага", "флагов")}`, s.streak ? h("span", { class: "streak" }, " · ", icon("flame", 15), ` ${s.streak} ${plural(s.streak, "день", "дня", "дней")} подряд`) : null),
+        h("div", { class: "bar xp", role: "img", "aria-label": `До следующего уровня ${lv.pct}%` }, h("i", { style: `width:${lv.pct}%` })),
+        h("small", { class: "muted" }, lv.to ? `До уровня ${lv.n + 1}: ${lv.to - s.points} очк.` : "Максимальный уровень"),
+        s.next ? h("p", { style: "margin:14px 0 16px" }, h("span", { class: "muted" }, "Дальше: "), h("a", { href: `#/room/${s.next.room.slug}` }, s.next.room.title)) : null,
+        s.next ? h("a", { class: "btn", href: `#/room/${s.next.room.slug}` }, s.next.done ? "Продолжить " : "Следующая комната ", icon("arrow", 16))
+               : h("span", { class: "tag easy" }, "Все комнаты пройдены")),
+      h("div", { class: "welcome-visual", "aria-hidden": "true" }, h("canvas", { id: "hero3d" }))));
 }
 
 // ---------- комната ----------
