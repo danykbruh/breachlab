@@ -319,6 +319,16 @@ const TOOLS = {
   "sha256":  { name: "SHA-256", run: async (s) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", utf8.enc(s)))].map((b) => b.toString(16).padStart(2, "0")).join("") },
   "sha1":    { name: "SHA-1", run: async (s) => [...new Uint8Array(await crypto.subtle.digest("SHA-1", utf8.enc(s)))].map((b) => b.toString(16).padStart(2, "0")).join("") },
   "reverse": { name: "Перевернуть строку", run: (s) => [...s].reverse().join("") },
+  "rot-all": { name: "Цезарь: все сдвиги", run: (s) => Array.from({ length: 25 }, (_, i) => {
+      const n = i + 1; return `${String(n).padStart(2, " ")}: ` + s.replace(/[a-z]/gi, (c) => { const b = c <= "Z" ? 65 : 97; return String.fromCharCode(((c.charCodeAt(0) - b + n) % 26) + b); }); }).join("\n") },
+  "xor":     { name: "XOR (hex + ключ)", key: true, run: (s, key) => {
+      const c = s.replace(/0x|[\s:,-]/gi, ""); if (!/^([0-9a-f]{2})+$/i.test(c)) throw new Error("не hex");
+      const k = parseInt(String(key).replace(/^0x/i, ""), 16); if (!(k >= 0 && k <= 255)) throw new Error("ключ");
+      return utf8.dec(Uint8Array.from(c.match(/../g), (x) => parseInt(x, 16) ^ k)); } },
+  "sha-lines": { name: "SHA-256 каждой строки", run: async (s) => {
+      const out = []; for (const line of s.split(/\r?\n/).filter(Boolean).slice(0, 500)) {
+        out.push([...new Uint8Array(await crypto.subtle.digest("SHA-256", utf8.enc(line)))].map((b) => b.toString(16).padStart(2, "0")).join("") + "  " + line); }
+      return out.join("\n"); } },
 };
 function viewTools() {
   setNav("tools");
@@ -326,10 +336,14 @@ function viewTools() {
   const output = h("textarea", { class: "mono", rows: "5", readonly: true, "aria-label": "Результат", placeholder: "Здесь появится результат" });
   const msg = h("p", { class: "msg", role: "status" });
   let current = "b64-dec";
+  const keyIn = h("input", { type: "text", class: "mono", value: "00", maxlength: "4", "aria-label": "Ключ XOR (hex)", style: "max-width:140px" });
+  const keyBox = h("label", { class: "tool-label", hidden: true }, "Ключ XOR — один байт в hex (00–ff)", keyIn);
+  keyIn.addEventListener("input", () => run());
   const run = async () => {
+    keyBox.hidden = !TOOLS[current].key;
     msg.textContent = ""; msg.className = "msg";
     if (!input.value) { output.value = ""; return; }
-    try { output.value = await TOOLS[current].run(input.value); }
+    try { output.value = await TOOLS[current].run(input.value, keyIn.value || "00"); }
     catch { output.value = ""; msg.className = "msg err"; msg.textContent = "Не получилось: проверьте, что текст в правильном формате."; }
   };
   const buttons = h("div", { class: "chips", role: "group", "aria-label": "Преобразование" },
@@ -338,7 +352,7 @@ function viewTools() {
   input.addEventListener("input", run);
   render(h("h1", {}, "Инструменты"),
     h("p", { class: "muted" }, "Кодировки и хеши прямо в браузере. Текст никуда не отправляется — всё считается на вашем устройстве."),
-    buttons,
+    buttons, keyBox,
     h("label", { class: "tool-label" }, "Исходный текст", input),
     h("label", { class: "tool-label" }, "Результат", output), msg,
     h("div", { class: "answer" },
@@ -351,7 +365,9 @@ function viewTools() {
 - \`48656c6c6f\` — **hex**: только \`0–9\` и \`a–f\`, чётная длина
 - \`Uryyb\` — **ROT13**: похоже на текст, но буквы «перемешаны»
 - \`%D0%9F%D1%80\` — **URL-кодирование**: знаки \`%\` и две hex-цифры
-- 64 hex-символа — скорее всего **SHA-256**, 40 — **SHA-1**, 32 — **MD5**`)));
+- 64 hex-символа — скорее всего **SHA-256**, 40 — **SHA-1**, 32 — **MD5**
+
+**XOR с одним байтом:** если известно начало текста (например, \`BL{\`), ключ = первый байт шифра XOR код буквы \`B\` (0x42).`)));
 }
 
 // ---------- рейтинг ----------
