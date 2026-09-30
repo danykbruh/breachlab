@@ -7,9 +7,6 @@ import * as THREE from "three";
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 let app = null;
 
-// Следим, появился ли холст (главная страница перерисовывается при смене маршрута)
-new MutationObserver(check).observe(document.getElementById("main"), { childList: true, subtree: true });
-check();
 
 function check() {
   const canvas = document.getElementById("hero3d");
@@ -197,3 +194,8 @@ function mount(canvas) {
     },
   };
 }
+
+// Следим, появился ли холст (главная страница перерисовывается при смене маршрута).
+// Запуск в самом конце файла — когда все функции и константы уже объявлены.
+new MutationObserver(check).observe(document.getElementById("main"), { childList: true, subtree: true });
+check();
