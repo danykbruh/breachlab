@@ -5,6 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>BreachLab — учебная платформа по кибербезопасности</title>
 <meta name="description" content="Бесплатная учебная платформа по кибербезопасности: разбирай логи, фишинговые письма и учебные сайты, находи флаги и поднимайся в рейтинге.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://danykbruh.github.io/breachlab/">
+<meta property="og:image" content="https://danykbruh.github.io/breachlab/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:site_name" content="BreachLab">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://danykbruh.github.io/breachlab/og-image.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BreachLab">
 <meta property="og:title" content="BreachLab — учись защищать, решая реальные задачи">
 <meta property="og:description" content="Комнаты по SOC, сетям, Linux, вебу и форензике. Теория, практика и флаги прямо в браузере.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%23070708%22/%3E%3Ctext x=%2232%22 y=%2242%22 font-family=%22monospace%22 font-size=%2228%22 font-weight=%22700%22 fill=%22%23FF3B3B%22 text-anchor=%22middle%22%3E%3E_%3C/text%3E%3C/svg%3E">
@@ -12,14 +27,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap">
-<link rel="stylesheet" href="css/styles.css?v=8">
+<link rel="stylesheet" href="css/styles.css?v=9">
 <!-- Библиотеки с закреплёнными версиями -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js" crossorigin="anonymous" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js" crossorigin="anonymous" defer></script>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }</script>
 <script src="js/config.js" defer></script>
-<script src="js/app.js?v=8" defer></script>
+<script src="js/app.js?v=9" defer></script>
 <script type="module" src="js/hero3d.js?v=2"></script>
 </head>
 <body>
@@ -37,7 +52,18 @@
 <main id="main" tabindex="-1"><p class="muted">Загрузка…</p></main>
 <footer class="foot">
   <span>BreachLab — учебная платформа. Навыки применяются только к учебным материалам.</span>
-  <a href="#/rules">Правила и конфиденциальность</a>
+  <span class="foot-links"><button type="button" id="installBtn" class="link" hidden>Установить приложение</button><a href="#/rules">Правила и конфиденциальность</a></span>
 </footer>
+<script>
+// Установка как приложение (PWA): регистрируем service worker
+if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+// Кнопка «Установить приложение» появляется, когда браузер это разрешает (Chrome, Edge, Android)
+let installEvt = null;
+addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installEvt = e; document.getElementById("installBtn").hidden = false; });
+document.getElementById("installBtn").addEventListener("click", async () => {
+  if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice.catch(() => {}); installEvt = null;
+  document.getElementById("installBtn").hidden = true;
+});
+</script>
 </body>
 </html>
