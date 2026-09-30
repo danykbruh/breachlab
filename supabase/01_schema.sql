@@ -1,9 +1,9 @@
 -- =====================================================================
--- BreachLab — схема базы данных (этап 1)
+-- BreachLab - схема базы данных (этап 1)
 -- Запускать один раз: Supabase → SQL Editor → New query → вставить → Run
 --
 -- Принципы:
---  * RLS на всех таблицах, по умолчанию — запрет.
+--  * RLS на всех таблицах, по умолчанию - запрет.
 --  * Правильные ответы (task_answers) клиенту недоступны вообще:
 --    проверка идёт только в функции submit_answer на сервере.
 --  * Ответы хранятся как sha256(соль + ответ), а не открытым текстом.
@@ -72,7 +72,7 @@ create table if not exists public.solves (
 
 -- =====================================================================
 -- Профиль создаётся при регистрации. Имя берём из формы регистрации;
--- если занято или некорректно — генерируем user_xxxxxx (можно сменить позже).
+-- если занято или некорректно - генерируем user_xxxxxx (можно сменить позже).
 -- =====================================================================
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = '' as $$
@@ -127,7 +127,7 @@ drop policy if exists "solves: own" on public.solves;
 create policy "solves: own" on public.solves
   for select to authenticated using (user_id = (select auth.uid()));
 
--- Права: читать можно, писать напрямую — нельзя (только через функции ниже)
+-- Права: читать можно, писать напрямую - нельзя (только через функции ниже)
 revoke all on public.profiles, public.rooms, public.tasks, public.task_answers,
               public.submissions, public.solves from anon, authenticated;
 grant select on public.rooms, public.tasks to anon, authenticated;
@@ -158,7 +158,7 @@ begin
    where t.id = p_task_id and r.published;
   if pts is null then return jsonb_build_object('error', 'not_found'); end if;
 
-  -- уже решено — очки второй раз не начисляем
+  -- уже решено - очки второй раз не начисляем
   if exists (select 1 from public.solves where user_id = uid and task_id = p_task_id) then
     return jsonb_build_object('correct', true, 'already', true);
   end if;

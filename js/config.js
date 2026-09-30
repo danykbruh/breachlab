@@ -1,4 +1,4 @@
-// Публичные настройки Supabase (видны всем — это нормально, защита данных в RLS).
+// Публичные настройки Supabase (видны всем - это нормально, защита данных в RLS).
 // НИКОГДА не добавляйте сюда secret-ключ (sb_secret_…).
 window.BL_CONFIG = {
   supabaseUrl: "https://fpulzdocuudfnmrvdiog.supabase.co",

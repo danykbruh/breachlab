@@ -1,4 +1,4 @@
-// BreachLab — клиент. Маршруты в адресе после #:
+// BreachLab - клиент. Маршруты в адресе после #:
 // #/ · #/room/<slug> · #/tools · #/leaderboard · #/profile · #/login · #/signup · #/forgot · #/rules
 (() => {
 "use strict";
@@ -27,7 +27,7 @@ function h(tag, attrs = {}, ...kids) {
 }
 const LABEL = { soc: "SOC", web: "Веб", linux: "Linux", forensics: "Форензика", crypto: "Криптография", osint: "OSINT",
                 easy: "Легко", medium: "Средне", hard: "Сложно" };
-// Иконки (SVG в стиле Lucide) — вместо эмодзи, чтобы выглядели одинаково на всех устройствах
+// Иконки (SVG в стиле Lucide) - вместо эмодзи, чтобы выглядели одинаково на всех устройствах
 const ICONS = {
   shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
   globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
@@ -331,7 +331,7 @@ async function viewCert(id) {
   if (!c) return render(h("h1", {}, "Сертификат не найден"), h("p", { class: "muted" }, "Проверьте номер сертификата."));
   const url = location.origin + location.pathname + `#/cert/${c.id}`;
   const msg = h("p", { class: "msg", role: "status" });
-  document.title = `Сертификат — ${c.path_title} — BreachLab`;
+  document.title = `Сертификат - ${c.path_title} - BreachLab`;
   render(
     h("div", { class: "cert-actions no-print" },
       h("a", { href: `#/u/${encodeURIComponent(c.username)}`, class: "muted" }, `← Профиль ${c.username}`),
@@ -367,7 +367,7 @@ async function viewPublic(username) {
   const url = location.origin + location.pathname + `#/u/${encodeURIComponent(pr.username)}`;
   const msg = h("p", { class: "msg", role: "status" });
   const isMe = profile && profile.username === pr.username;
-  document.title = `${pr.username} — BreachLab`;
+  document.title = `${pr.username} - BreachLab`;
   render(
     h("section", { class: "card profile-head" },
       h("div", { class: "avatar", "aria-hidden": "true" }, pr.username.slice(0, 2).toUpperCase()),
@@ -426,13 +426,13 @@ async function viewPath(slug) {
         h("small", { class: "muted" }, p.complete ? "Пройдена" : i === nextIdx ? `Следующая · ${p.done} из ${p.total} заданий` : `${p.total} заданий`))))));
 }
 function hero(stats) {
-  const num = (v, label) => h("div", {}, h("b", {}, v ?? "—"), h("span", {}, label));
+  const num = (v, label) => h("div", {}, h("b", {}, v ?? "-"), h("span", {}, label));
   return h("section", { class: "hero" },
     h("div", { class: "hero-grid" },
     h("div", { class: "hero-text" },
     h("p", { class: "eyebrow" }, h("span", { class: "dot", "aria-hidden": "true" }), "учебная платформа по кибербезопасности"),
     h("h1", {}, "Учись защищать, ", h("em", {}, "решая реальные задачи")),
-    h("p", { class: "lead" }, "Разбирай логи взломанного сервера, фишинговые письма и уязвимые сайты. Теория, практика и флаги — прямо в браузере, бесплатно."),
+    h("p", { class: "lead" }, "Разбирай логи взломанного сервера, фишинговые письма и уязвимые сайты. Теория, практика и флаги - прямо в браузере, бесплатно."),
     h("div", { class: "actions" }, h("a", { class: "btn", href: "#/signup" }, "Начать бесплатно"), h("a", { class: "btn ghost", href: "#rooms", onclick: (e) => { e.preventDefault(); document.getElementById("rooms").scrollIntoView({ behavior: "smooth" }); } }, "Смотреть комнаты ↓")),),
     h("div", { class: "hero-visual", "aria-hidden": "true" }, h("canvas", { id: "hero3d" }), h("div", { class: "hero-visual-label" }, h("span", { class: "dot" }), "учебная карта атак"))),
     stats ? h("div", { class: "stats hero-stats" }, num(stats.rooms, "комнат"), num(stats.tasks, "заданий"), num(stats.players, "игроков"), num(stats.solves, "флагов найдено")) : null,
@@ -525,7 +525,7 @@ function taskCard(t, isSolved, onSolved, unlockedHint, isDaily) {
     const { data, error } = await sb.rpc("submit_answer", { p_task_id: t.id, p_answer: answer });
     btn.disabled = false;
     if (error) { msg.className = "msg err"; msg.textContent = "Не получилось проверить. Попробуйте ещё раз."; return; }
-    if (data.error === "rate_limited") { msg.className = "msg err"; msg.textContent = "Слишком много попыток — подождите минуту."; return; }
+    if (data.error === "rate_limited") { msg.className = "msg err"; msg.textContent = "Слишком много попыток - подождите минуту."; return; }
     if (data.error) { msg.className = "msg err"; msg.textContent = "Задание недоступно."; return; }
     if (data.correct) {
       card.classList.add("solved", "pop"); disableAll(); btn.disabled = true; btn.textContent = "Решено ✓";
@@ -538,7 +538,7 @@ function taskCard(t, isSolved, onSolved, unlockedHint, isDaily) {
     }
   } }, input || radios, btn);
 
-  // Подсказка: бесплатно после решения, до решения — за часть очков
+  // Подсказка: бесплатно после решения, до решения - за часть очков
   const cost = hintCost(t.points);
   const hintBox = h("p", { class: "hint", hidden: !unlockedHint }, unlockedHint ? [icon("bulb", 15), " ", unlockedHint] : null);
   let hintBtn = null;
@@ -593,7 +593,7 @@ function viewTools() {
   const msg = h("p", { class: "msg", role: "status" });
   let current = "b64-dec";
   const keyIn = h("input", { type: "text", class: "mono", value: "00", maxlength: "4", "aria-label": "Ключ XOR (hex)", style: "max-width:140px" });
-  const keyBox = h("label", { class: "tool-label", hidden: true }, "Ключ XOR — один байт в hex (00–ff)", keyIn);
+  const keyBox = h("label", { class: "tool-label", hidden: true }, "Ключ XOR - один байт в hex (00-ff)", keyIn);
   keyIn.addEventListener("input", () => run());
   const run = async () => {
     keyBox.hidden = !TOOLS[current].key;
@@ -607,7 +607,7 @@ function viewTools() {
       onclick: (e) => { current = id; buttons.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.tool === id ? "true" : "false")); run(); } }, t.name)));
   input.addEventListener("input", run);
   render(h("h1", {}, "Инструменты"),
-    h("p", { class: "muted" }, "Кодировки и хеши прямо в браузере. Текст никуда не отправляется — всё считается на вашем устройстве."),
+    h("p", { class: "muted" }, "Кодировки и хеши прямо в браузере. Текст никуда не отправляется - всё считается на вашем устройстве."),
     buttons, keyBox,
     h("label", { class: "tool-label" }, "Исходный текст", input),
     h("label", { class: "tool-label" }, "Результат", output), msg,
@@ -617,11 +617,11 @@ function viewTools() {
     h("div", { class: "card", style: "margin-top:20px" }, md(`
 **Как узнать кодировку на глаз**
 
-- \`SGVsbG8=\` — **Base64**: латиница, цифры, \`+ /\` и \`=\` в конце
-- \`48656c6c6f\` — **hex**: только \`0–9\` и \`a–f\`, чётная длина
-- \`Uryyb\` — **ROT13**: похоже на текст, но буквы «перемешаны»
-- \`%D0%9F%D1%80\` — **URL-кодирование**: знаки \`%\` и две hex-цифры
-- 64 hex-символа — скорее всего **SHA-256**, 40 — **SHA-1**, 32 — **MD5**
+- \`SGVsbG8=\` - **Base64**: латиница, цифры, \`+ /\` и \`=\` в конце
+- \`48656c6c6f\` - **hex**: только \`0-9\` и \`a-f\`, чётная длина
+- \`Uryyb\` - **ROT13**: похоже на текст, но буквы «перемешаны»
+- \`%D0%9F%D1%80\` - **URL-кодирование**: знаки \`%\` и две hex-цифры
+- 64 hex-символа - скорее всего **SHA-256**, 40 - **SHA-1**, 32 - **MD5**
 
 **XOR с одним байтом:** если известно начало текста (например, \`BL{\`), ключ = первый байт шифра XOR код буквы \`B\` (0x42).`)));
 }
@@ -688,7 +688,7 @@ async function viewProfile() {
         p.complete ? h("span", { class: "ok-text", "aria-label": "Пройдена" }, icon("check", 16)) : h("small", { class: "muted" }, `${p.done}/${p.total}`));
     })),
     h("h2", {}, "Публичный профиль"),
-    h("p", { class: "muted", style: "margin-top:0" }, "Страница с твоим уровнем, значками и сертификатами — ей можно поделиться, например в резюме."),
+    h("p", { class: "muted", style: "margin-top:0" }, "Страница с твоим уровнем, значками и сертификатами - ей можно поделиться, например в резюме."),
     h("div", { class: "answer", style: "align-items:center" },
       profile?.username ? h("a", { class: "btn-small", href: `#/u/${encodeURIComponent(profile.username)}` }, icon("share", 16), " Открыть мой профиль") : null,
       h("label", { class: "check toggle" },
@@ -704,7 +704,7 @@ async function viewProfile() {
       e.preventDefault();
       const { data } = await sb.rpc("set_username", { p_username: nameIn.value.trim() });
       if (data?.ok) { nameMsg.className = "msg ok"; nameMsg.textContent = "Сохранено."; await loadProfile(); }
-      else { nameMsg.className = "msg err"; nameMsg.textContent = data?.error === "taken" ? "Это имя уже занято." : "3–20 символов: латиница, цифры, _"; }
+      else { nameMsg.className = "msg err"; nameMsg.textContent = data?.error === "taken" ? "Это имя уже занято." : "3-20 символов: латиница, цифры, _"; }
     } }, nameIn, h("button", { type: "submit" }, "Сохранить")), nameMsg,
     h("h2", {}, "Аккаунт"),
     h("p", { class: "muted" }, user.email),
@@ -749,7 +749,7 @@ function authForm(mode) {
     if (r.error) { msg.className = "msg err"; msg.textContent = /invalid login/i.test(r.error.message) ? "Неверная почта или пароль." : "Ошибка: " + r.error.message; return; }
     msg.className = "msg ok";
     if (mode === "login") location.hash = "#/";
-    if (mode === "signup") msg.textContent = "Готово! Проверьте почту и подтвердите адрес — потом войдите.";
+    if (mode === "signup") msg.textContent = "Готово! Проверьте почту и подтвердите адрес - потом войдите.";
     if (mode === "forgot") msg.textContent = "Если такой аккаунт есть, мы отправили письмо со ссылкой.";
     if (mode === "newpass") { msg.textContent = "Пароль изменён."; setTimeout(() => (location.hash = "#/"), 800); }
   } }, ...fields, btn, msg);
@@ -766,14 +766,14 @@ function viewRules() {
   render(h("h1", {}, "Правила и конфиденциальность"), md(`
 ## Правила
 1. Навыки из комнат применяются **только** к учебным материалам BreachLab.
-2. Атаковать чужие сайты, сети и устройства без письменного разрешения владельца запрещено — это нарушение закона (в России — ст. 272–274 УК РФ).
-3. Не публикуйте готовые ответы — это лишает других пользы от обучения.
-4. Нарушение правил — блокировка аккаунта.
+2. Атаковать чужие сайты, сети и устройства без письменного разрешения владельца запрещено - это нарушение закона (в России - ст. 272-274 УК РФ).
+3. Не публикуйте готовые ответы - это лишает других пользы от обучения.
+4. Нарушение правил - блокировка аккаунта.
 
 ## Какие данные мы храним
-- Почта и пароль (пароль — в виде хеша, мы его не видим) — для входа.
-- Имя в рейтинге — видно всем в разделе «Рейтинг».
-- Решённые задания и попытки ответов — для прогресса, рейтинга и защиты от перебора.
+- Почта и пароль (пароль - в виде хеша, мы его не видим) - для входа.
+- Имя в рейтинге - видно всем в разделе «Рейтинг».
+- Решённые задания и попытки ответов - для прогресса, рейтинга и защиты от перебора.
 
 Страница «Инструменты» работает полностью на вашем устройстве: введённый туда текст никуда не отправляется.
 

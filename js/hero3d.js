@@ -1,4 +1,4 @@
-// BreachLab — 3D-глобус «карта угроз» на главной (Three.js).
+// BreachLab - 3D-глобус «карта угроз» на главной (Three.js).
 // Точки на сфере складываются в «континенты», между ними летят красные дуги-атаки,
 // вокруг вращается орбита со спутником. Сцена запускается только когда холст на экране,
 // ставится на паузу во вкладке в фоне и уважает «уменьшить движение» в системе.
@@ -81,7 +81,7 @@ function mount(canvas) {
   const dots = new THREE.Points(dotsGeo, new THREE.PointsMaterial({ color: 0xff6b6b, size: 0.028, sizeAttenuation: true, transparent: true, opacity: 0.85 }));
   globe.add(dots);
 
-  // Сетка широт — тонкие кольца для «технологичного» вида
+  // Сетка широт - тонкие кольца для «технологичного» вида
   const gridMat = new THREE.LineBasicMaterial({ color: 0xff3b3b, transparent: true, opacity: 0.08 });
   for (let k = -2; k <= 2; k++) {
     const lat = (k / 3) * (Math.PI / 2), rr = Math.cos(lat) * R * 1.002, yy = Math.sin(lat) * R * 1.002;
@@ -130,7 +130,7 @@ function mount(canvas) {
   }
   const ro = new ResizeObserver(resize); ro.observe(canvas); resize();
 
-  // Мышь — лёгкий наклон; перетаскивание — вращение глобуса
+  // Мышь - лёгкий наклон; перетаскивание - вращение глобуса
   const ptr = { x: 0, y: 0, tx: 0, ty: 0 }; let drag = null, spin = 0;
   const onMove = (e) => {
     const r = canvas.getBoundingClientRect();
@@ -196,6 +196,6 @@ function mount(canvas) {
 }
 
 // Следим, появился ли холст (главная страница перерисовывается при смене маршрута).
-// Запуск в самом конце файла — когда все функции и константы уже объявлены.
+// Запуск в самом конце файла - когда все функции и константы уже объявлены.
 new MutationObserver(check).observe(document.getElementById("main"), { childList: true, subtree: true });
 check();

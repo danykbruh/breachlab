@@ -1,4 +1,4 @@
-/* BreachLab — тема «чёрный + красный» (стиль Cyberpunk/terminal по UI/UX Pro Max)
+/* BreachLab - тема «чёрный + красный» (стиль Cyberpunk/terminal по UI/UX Pro Max)
    Контраст: основной текст 15:1, приглушённый 7:1, красный акцент на чёрном 5.4:1 */
 :root{
   --bg:#070708;--bg2:#0B0B0D;--surface:#111113;--surface2:#18181B;--line:#26262B;--line-strong:#3A3A40;

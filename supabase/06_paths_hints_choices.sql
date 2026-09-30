@@ -1,5 +1,5 @@
 -- =====================================================================
--- BreachLab — пути обучения, подсказки за очки, вопросы с вариантами
+-- BreachLab - пути обучения, подсказки за очки, вопросы с вариантами
 -- =====================================================================
 
 -- ---------- Пути обучения ----------
@@ -21,7 +21,7 @@ grant select on public.paths to anon, authenticated;
 insert into public.paths (slug, title, summary, room_slugs, position) values
   ('soc-analyst', 'Путь аналитика SOC', 'От основ безопасности до расследования настоящего инцидента.',
    array['welcome','cia-triad','soc-intro','network-basics','phishing-email','log-analysis'], 10),
-  ('defender-basics', 'Основы защитника', 'Сети, Linux, кодировки и веб — фундамент для любой роли в ИБ.',
+  ('defender-basics', 'Основы защитника', 'Сети, Linux, кодировки и веб - фундамент для любой роли в ИБ.',
    array['welcome','network-basics','linux-basics','encoding-hashes','web-basics'], 20),
   ('crypto', 'Криптография', 'От Base64 до XOR и подбора хешей.',
    array['encoding-hashes','crypto-2'], 30)
@@ -52,7 +52,7 @@ grant select on public.hint_unlocks to authenticated;
 create or replace function public.hint_cost(p_points integer)
 returns integer language sql immutable set search_path = '' as $$ select greatest(1, round(p_points * 0.3)::integer) $$;
 
--- Открыть подсказку (повторное открытие бесплатно; после решения — тоже бесплатно)
+-- Открыть подсказку (повторное открытие бесплатно; после решения - тоже бесплатно)
 create or replace function public.unlock_hint(p_task_id bigint)
 returns jsonb language plpgsql security definer set search_path = '' as $$
 declare uid uuid := auth.uid(); h text;
@@ -77,7 +77,7 @@ $$;
 revoke all on function public.room_hints(bigint) from public, anon;
 grant execute on function public.room_hints(bigint) to authenticated;
 
--- Проверка ответа: если подсказка открыта до решения — минус её стоимость
+-- Проверка ответа: если подсказка открыта до решения - минус её стоимость
 create or replace function public.submit_answer(p_task_id bigint, p_answer text)
 returns jsonb language plpgsql security definer set search_path = '' as $$
 declare

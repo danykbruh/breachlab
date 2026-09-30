@@ -1,5 +1,5 @@
 -- =====================================================================
--- BreachLab — публичные профили и сертификаты (уже применено в проекте)
+-- BreachLab - публичные профили и сертификаты (уже применено в проекте)
 -- =====================================================================
 alter table public.profiles add column if not exists is_public boolean not null default true;
 
@@ -16,8 +16,8 @@ create policy "certificates: own" on public.certificates for select to authentic
 revoke all on public.certificates from anon, authenticated;
 grant select on public.certificates to authenticated;
 
--- set_profile_public(boolean)   — скрыть/показать профиль
--- public_profile(text)          — данные публичного профиля (или {hidden:true})
--- issue_certificate(text)       — сервер проверяет, что все задания пути решены, и выдаёт сертификат
--- get_certificate(uuid)         — проверка сертификата по номеру (доступна всем)
+-- set_profile_public(boolean)   - скрыть/показать профиль
+-- public_profile(text)          - данные публичного профиля (или {hidden:true})
+-- issue_certificate(text)       - сервер проверяет, что все задания пути решены, и выдаёт сертификат
+-- get_certificate(uuid)         - проверка сертификата по номеру (доступна всем)
 -- Полный код функций см. в истории миграций Supabase (public_profiles_certificates).
